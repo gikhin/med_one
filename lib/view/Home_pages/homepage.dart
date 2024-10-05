@@ -33,7 +33,6 @@ class _HomescreenState extends State<Homescreen> {
         padding: const EdgeInsets.all(12.0),
         child: Column(mainAxisAlignment: MainAxisAlignment.start,crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
             Text(
               "Hello,,",
               style: text60022,
@@ -53,45 +52,50 @@ class _HomescreenState extends State<Homescreen> {
               style: text60031,
             ),
             SizedBox(height: 50),
-            Container(
-              height: 235,
-              width: 391,
-              decoration: BoxDecoration(color: AppColors.homecardcolor1
-              ,borderRadius: BorderRadius.all(Radius.circular(20))
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Row(mainAxisAlignment: MainAxisAlignment.start,crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Image.asset('assets/icons/alaramclock.png',height: 40,width: 40,),
-                    SizedBox(width: 10,),
-                    Column(mainAxisAlignment: MainAxisAlignment.start,crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Everyday Medicine',style: text50022white,),
-                        SizedBox(width: 14,),
-                        Text('Insulin',style: text50022white,),
-                        SizedBox(width: 8,),
-                        Text('Take your morning insulin',style: text40014,),
-                        Text('before 30 min of breakfast',style: text40014,),
 
-                      ],
+            Stack(
+              children: [
+                Container(
+                  height: 180,
+                  decoration: BoxDecoration(
+                    color: AppColors.homecardcolor1,
+                    borderRadius: BorderRadius.circular(9)
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children:[
+                        Padding(
+                          padding: const EdgeInsets.only(left: 25.0),
+                          child: Row(
+                            children: [
+                              Icon(Icons.access_alarm,size: 35,color: AppColors.whiteColor,),
+                              Text('Everyday Medicine',style: TextStyle(color: AppColors.whiteColor),),
+                            ],
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 25.0),
+                          child: Text('Insulin',style: TextStyle(fontSize: 28,color: AppColors.whiteColor),),
+                        ),
+                        SizedBox(height: 10,),
+
+                        Text('Take your morning insulin',style: TextStyle(color: AppColors.whiteColor)),
+                        Text('before 30 min of breakfast',style: TextStyle(color: AppColors.whiteColor),)
+
+                      ]
                     ),
-                    Image.asset('assets/images/doctor.png',height: 40,width: 40,),
-
-
-                  ],
+                  ),
                 ),
-              ),
+                Positioned(
+                  top: 10,right: 10,
+                    child: Image.asset('assets/images/doctor.png',height: 150,)),
+              ],
             )
-
-
           ],
-
         ),
       ),
-
-
-
     );
   }
 }
