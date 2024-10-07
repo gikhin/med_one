@@ -73,8 +73,11 @@ flutter:
     - assets/icons/google.png
     - assets/icons/alaramclock.png
     - assets/icons/addmed.png
+    - assets/icons/addmednotselected.png
     - assets/icons/bellicon.png
+    - assets/icons/belliconnotselected.png
     - assets/icons/homeicon.png
+    - assets/icons/homeiconnotselected.png
 
 
     - assets/images/doctor.png

@@ -28,7 +28,8 @@ class Dronewidgets {
           padding: const EdgeInsets.all(10.0),
           child: Text(
             title, // Use the passed title
-            style: TextStyle(fontWeight: FontWeight.bold,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
               color: textColor ?? Colors.white, // Use passed text color or default to white
             ),
           ),
@@ -36,6 +37,7 @@ class Dronewidgets {
       ),
     );
   }
+
   // Back button widget
   static Widget backButton(BuildContext context) {
     return Padding(
@@ -98,5 +100,41 @@ class Dronewidgets {
     );
   }
 
-
+  // Widget for the two buttons and text displayed above them
+  static Widget medicationOptions(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'Do you have any past orders or you need to add it manually',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.normal,
+            color: Colors.grey,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        SizedBox(height: 20),
+        // "Past order" button
+        mainButton(
+          title: 'Past order',
+          onPressed: () {
+            // Action for Past order
+          },
+          backgroundColor: AppColors.primaryColor2, // Light blue color
+          textColor: Colors.white,
+        ),
+        SizedBox(height: 12),
+        // "Add Medication" button
+        mainButton(
+          title: 'Add Medication',
+          onPressed: () {
+            // Action for Add Medication
+          },
+          backgroundColor: AppColors.primaryColor2, // Light blue color
+          textColor: Colors.white,
+        ),
+      ],
+    );
+  }
 }

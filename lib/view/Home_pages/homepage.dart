@@ -35,12 +35,12 @@ class _HomescreenState extends State<Homescreen> {
           children: [
             Text(
               "Hello,,",
-              style: text60022,
+              style: text60022pri,
             ),
             SizedBox(height: 9),
             Text(
               "HEAVN JOE",
-              style: text60022,
+              style: text60022pri,
             ),
             SizedBox(height: 26),
             Text(
@@ -71,18 +71,18 @@ class _HomescreenState extends State<Homescreen> {
                           child: Row(
                             children: [
                               Icon(Icons.access_alarm,size: 35,color: AppColors.whiteColor,),
-                              Text('Everyday Medicine',style: TextStyle(color: AppColors.whiteColor),),
+                              Text('Everyday Medicine',style: text50014,),
                             ],
                           ),
                         ),
                         Padding(
                           padding: const EdgeInsets.only(left: 25.0),
-                          child: Text('Insulin',style: TextStyle(fontSize: 28,color: AppColors.whiteColor),),
+                          child: Text('Insulin',style: text60022),
                         ),
                         SizedBox(height: 10,),
 
-                        Text('Take your morning insulin',style: TextStyle(color: AppColors.whiteColor)),
-                        Text('before 30 min of breakfast',style: TextStyle(color: AppColors.whiteColor),)
+                        Text('Take your morning insulin',style: text40014),
+                        Text('before 30 min of breakfast',style: text50014)
 
                       ]
                     ),
