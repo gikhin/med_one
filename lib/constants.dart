@@ -18,7 +18,8 @@ const text40016 = TextStyle(fontWeight: FontWeight.w400,fontSize: 16,color: AppC
 const text40016red = TextStyle(fontWeight: FontWeight.w400,fontSize: 16,color: AppColors.primaryColor5);
 const text40016black = TextStyle(fontWeight: FontWeight.w400,fontSize: 16,color: AppColors.blackColor);
 const text40018 = TextStyle(fontWeight: FontWeight.w400,fontSize: 16,color: AppColors.whiteColor);
-const text40018primary = TextStyle(fontWeight: FontWeight.w400,fontSize: 16,color: AppColors.primaryColor);
+const text40018primary = TextStyle(fontWeight: FontWeight.w400,fontSize: 18,color: AppColors.primaryColor);
+const text40018black = TextStyle(fontWeight: FontWeight.w400,fontSize: 18,color: AppColors.textColor2);
 const text40023 = TextStyle(fontWeight: FontWeight.w400,fontSize: 23,color: AppColors.whiteColor);
 const text40024black = TextStyle(fontWeight: FontWeight.w400,fontSize: 24,color: AppColors.blackColor);
 
@@ -35,7 +36,7 @@ const text50016 = TextStyle(fontWeight: FontWeight.w500,fontSize: 16,color: AppC
 const text50018 = TextStyle(fontWeight: FontWeight.w500,fontSize: 18,color: AppColors.primaryColor2);
 const text50014primary = TextStyle(fontWeight: FontWeight.w500,fontSize: 14,color: AppColors.primaryColor);
 const text50014black = TextStyle(fontWeight: FontWeight.w500,fontSize: 14,color: AppColors.blackColor);
-const text50018primary = TextStyle(fontWeight: FontWeight.w500,fontSize: 18,color: AppColors.primaryColor2);
+const text50018primary = TextStyle(fontWeight: FontWeight.w500,fontSize: 18,color: AppColors.textColor2);
 const text50022 = TextStyle(fontWeight: FontWeight.w500,fontSize: 22,color: AppColors.primaryColor2);
 const text50022white = TextStyle(fontWeight: FontWeight.w500,fontSize: 22,color: AppColors.whiteColor);
 
@@ -46,14 +47,17 @@ const text60017 = TextStyle(fontWeight: FontWeight.w600,fontSize: 17,color: AppC
 const text60017black = TextStyle(fontWeight: FontWeight.w600,fontSize: 17,color: AppColors.blackColor);
 const text60018 = TextStyle(fontWeight: FontWeight.w600,fontSize: 18,color: AppColors.whiteColor);
 const text60022pri = TextStyle(fontWeight: FontWeight.w600,fontSize: 22,color: AppColors.primaryColor2);
+const text60022bla = TextStyle(fontWeight: FontWeight.w600,fontSize: 22,color: AppColors.textColor2);
 const text60022 = TextStyle(fontWeight: FontWeight.w600,fontSize: 22,color: AppColors.whiteColor);
-const text60024 = TextStyle(fontWeight: FontWeight.w600,fontSize: 24,color: AppColors.whiteColor);
+const text60024 = TextStyle(fontWeight: FontWeight.w600,fontSize: 24,color: AppColors.textColor2);
 const text50026 = TextStyle(fontWeight: FontWeight.w500,fontSize: 26,color: AppColors.whiteColor);
-const text50026primary = TextStyle(fontWeight: FontWeight.w500,fontSize: 26,color: AppColors.primaryColor);
+const text50026black = TextStyle(fontWeight: FontWeight.w500,fontSize: 26,color: AppColors.textColor2);
+const text50026primary = TextStyle(fontWeight: FontWeight.w500,fontSize: 26,color: AppColors.primaryColor2);
 const text60028 = TextStyle(fontWeight: FontWeight.w600,fontSize: 28,color: AppColors.whiteColor);
 const text50030 = TextStyle(fontWeight: FontWeight.w500,fontSize: 30,color: AppColors.primaryColor);
+const text50030black = TextStyle(fontWeight: FontWeight.w500,fontSize: 30,color: AppColors.textColor2);
 const text60031 = TextStyle(fontWeight: FontWeight.w600,fontSize: 31,color: AppColors.primaryColor2);
-const text60030 = TextStyle(fontWeight: FontWeight.w600,fontSize: 31,color: AppColors.primaryColor);
+const text60027 = TextStyle(fontWeight: FontWeight.w600,fontSize: 27,color: AppColors.textColor2);
 
 
 const text70014 = TextStyle(fontWeight: FontWeight.w700,fontSize: 14,color: AppColors.whiteColor);

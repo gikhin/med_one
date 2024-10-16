@@ -197,18 +197,21 @@ class EditProfilePage extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  Container(
-                    height: 59,
-                    width: 150,
-                    child: Dronewidgets.mainButton(
-                      title: 'Cancel',
-                      onPressed: () {
-                        print('dde');
-                       Dronewidgets.medicationOptions(context);
-                      },
-                      backgroundColor: AppColors.primaryColor3,
-                    ),
-                  ),
+                  // Container(
+                  //   height: 59,
+                  //   width: 150,
+                  //   child: Dronewidgets.mainButton(
+                  //     title: 'Cancel',
+                  //     onPressed: () {
+                  //       print('dde');
+                  //      Dronewidgets.medicationOptions(context);
+                  //     },
+                  //     backgroundColor: AppColors.primaryColor3,
+                  //   ),
+                  // ),
+                  TextButton(onPressed: () {
+                    Navigator.pop(context);
+                  }, child: Text('Cancel',style: text40018black,)),
                   Container(
                     height: 59,
                     width: 150,

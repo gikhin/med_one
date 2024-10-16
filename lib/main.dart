@@ -4,6 +4,7 @@ import 'package:med_one/view/Creating%20Profile/Adding%20medicine%20two.dart';
 import 'package:med_one/view/Creating%20Profile/daily_routine.dart';
 import 'package:med_one/view/Creating%20Profile/profile%20for%20name.dart';
 import 'package:med_one/view/Home_pages/homepage.dart';
+import 'package:med_one/view/Home_pages/my%20profile/Medication%20history.dart';
 import 'package:med_one/view/Login%20Page.dart';
 import 'package:med_one/view/bottomnavigation.dart';
 
@@ -23,10 +24,10 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Demo',
       theme: ThemeData(
 fontFamily: 'Poppins',
-        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primaryColor2),
+        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primaryColor),
         useMaterial3: true,
       ),
-      home: BottomNavigation(),
+      home: LoginPage(),
     );
   }
 }

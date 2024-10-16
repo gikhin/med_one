@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import '../app_colors.dart';
 
@@ -8,13 +9,15 @@ class Dronewidgets {
     required VoidCallback onPressed,
     Color? backgroundColor, // Optional parameter for button background color
     Color? textColor, // Optional parameter for text color
+    FocusNode? fieldFocus,
   }) {
     return Container(
       width: 350,
+      height: 55,
       child: ElevatedButton(
         onPressed: onPressed, // Use the passed onPressed function
         style: ElevatedButton.styleFrom(
-          primary: backgroundColor ?? AppColors.primaryColor2, // Use passed background color or default
+          backgroundColor: backgroundColor ?? AppColors.primaryColor2, // Use passed background color or default
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(36), // Rounded corners
           ),
@@ -46,11 +49,13 @@ class Dronewidgets {
         radius: 20,
         backgroundColor: AppColors.primaryColor,
         child: IconButton(
+          padding: EdgeInsets.zero, // Remove the default padding
+          constraints: BoxConstraints(), // Remove any size constraints
           onPressed: () {
             Navigator.pop(context); // Navigate back
           },
           icon: Icon(
-            Icons.arrow_back,
+            Icons.arrow_back_ios_rounded,
             color: Colors.white,
           ),
         ),
@@ -58,19 +63,23 @@ class Dronewidgets {
     );
   }
 
+
   // Custom text form field widget with a controller
   static Widget customTextFormField({
     String? hintText,
     required TextEditingController controller, // Add controller parameter
+    FocusNode? fieldFocus,
     bool obscureText = false, // Add obscureText parameter with a default value
     Widget? suffixIcon, // Add suffixIcon parameter
     String? Function(String?)? validator, // Add validator parameter
+    String? Function(String?)? onFieldSubmitted,
   }) {
     return Container(
       width: 390,
       height: 55,
       child: TextFormField(
         controller: controller, // Use the passed controller
+        focusNode:fieldFocus ,
         obscureText: obscureText, // Use the passed obscureText value
         decoration: InputDecoration(
           hintText: hintText ?? '', // Set the placeholder text if provided
@@ -96,11 +105,12 @@ class Dronewidgets {
           color: Colors.black, // Text color
         ),
         validator: validator, // Use the validator if provided
+        onFieldSubmitted: onFieldSubmitted,
       ),
     );
   }
 
-  // Widget for the two buttons and text displayed above them
+// Widget for the two buttons and text displayed above them
   static Widget medicationOptions(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,

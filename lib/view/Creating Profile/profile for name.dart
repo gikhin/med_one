@@ -7,7 +7,23 @@ import '../../constants.dart';
 import 'calender.dart'; // Import CalendarProfile
 
 class ProfileName extends StatefulWidget {
-  const ProfileName({Key? key}) : super(key: key);
+  final String name;
+  final String gender;
+  final String dateOfBirth;
+  final String healthCondition;
+  final String height;
+  final String weight;
+
+  // Constructor to receive user data
+  const ProfileName({
+    Key? key,
+    required this.name,
+    required this.gender,
+    required this.dateOfBirth,
+    required this.healthCondition,
+    required this.height,
+    required this.weight,
+  }) : super(key: key);
 
   @override
   State<ProfileName> createState() => _ProfileNameState();
@@ -16,6 +32,14 @@ class ProfileName extends StatefulWidget {
 class _ProfileNameState extends State<ProfileName> {
   final TextEditingController _nameController = TextEditingController();
   String? _selectedGender;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize the controller and selected gender with existing data
+    _nameController.text = widget.name;
+    _selectedGender = widget.gender;
+  }
 
   void _selectGender(String gender) {
     setState(() {
@@ -53,27 +77,35 @@ class _ProfileNameState extends State<ProfileName> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: Dronewidgets.mainButton(
-        title: 'Next',
-        onPressed: () {
-          if (_validateInput()) {
-            // Pass name and gender to the next page
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => CalendarProfile(
-                  name: _nameController.text,
-                  gender: _selectedGender!,
+      backgroundColor: Colors.white,
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Dronewidgets.mainButton(
+          title: 'Next',
+          onPressed: () {
+            if (_validateInput()) {
+              // Pass name and gender to the next page, using new values if changed
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CalendarProfile(
+                    name: _nameController.text,
+                    gender: _selectedGender!,
+                    dateOfBirth: widget.dateOfBirth, // Pass the existing date of birth
+                    healthCondition: widget.healthCondition, // Pass the existing health condition
+                    height: widget.height, // Pass the existing height
+                    weight: widget.weight, // Pass the existing weight
+                  ),
                 ),
-              ),
-            );
-          }
-        },
+              );
+            }
+          },
+        ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      appBar: AppBar(
+      appBar: AppBar(automaticallyImplyLeading: false,
         backgroundColor: Colors.white,
-        leading: Dronewidgets.backButton(context),
+        // leading: Dronewidgets.backButton(context),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -82,23 +114,35 @@ class _ProfileNameState extends State<ProfileName> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Hello", style: text50026primary),
+                Text("Hello", style: text50026black),
                 const SizedBox(height: 8),
-                Text("Let's create your profile", style: text50026primary),
-                Text("together", style: text50026primary),
+                Row(
+                  children: [
+                    Text("Let's ", style: text50026black),
+                    Text("create your profile", style: text50026primary),
+                  ],
+                ),
+                Text("Together", style: text50026black),
                 const SizedBox(height: 8),
                 Text('Your name please', style: text50030),
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: TextField(
+                    style: TextStyle(fontSize: 18),
                     controller: _nameController,
-                    decoration: const InputDecoration(hintText: 'Enter your name here'),
+                    decoration: const InputDecoration(
+                      hintText: 'Enter your name here',
+                    ),
                   ),
                 ),
                 const SizedBox(height: 10),
-                Text('Please select your', style: text50030),
-                Text('gender', style: text50030),
-                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Text('What is your', style: text50026black),
+                    Text(' gender', style: text50026primary),
+                  ],
+                ),
+                const SizedBox(height: 15),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
@@ -128,42 +172,50 @@ class _ProfileNameState extends State<ProfileName> {
 
   Widget _genderContainer(String gender, String? imagePath) {
     bool isSelected = _selectedGender == gender;
-    return Container(
-      width: 164,
-      height: 154,
-      decoration: BoxDecoration(
-        color: isSelected ? AppColors.primaryColor2 : Colors.grey[300],
-        borderRadius: const BorderRadius.all(Radius.circular(20)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          if (imagePath != null)
-            Image.asset(
-              imagePath,
-              height: 100,
-              width: 100,
+    return Center(
+      child: Container(
+        width: 164,
+        height: 154,
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primaryColor2 : Colors.grey[300],
+          borderRadius: const BorderRadius.all(Radius.circular(20)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (imagePath != null)
+              Image.asset(
+                imagePath,
+                height: 100,
+                width: 100,
+                errorBuilder: (context, error, stackTrace) => Icon(Icons.error, size: 100), // Error handling
+              ),
+            Text(
+              gender,
+              style: isSelected ? text40018black : text40018primary,
             ),
-          Text(gender, style: text40018),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   Widget _preferNotToDiscloseContainer() {
     bool isSelected = _selectedGender == 'Prefer not to disclose';
-    return Container(
-      width: 364,
-      height: 95,
-      decoration: BoxDecoration(
-        color: isSelected ? AppColors.primaryColor2 : Colors.grey[300],
-        borderRadius: const BorderRadius.all(Radius.circular(20)),
-      ),
-      child: Center(
-        child: Text(
-          'Prefer not to disclose',
-          style: text40018,
+    return Center(
+      child: Container(
+        width: 364,
+        height: 95,
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primaryColor2 : Colors.grey[300],
+          borderRadius: const BorderRadius.all(Radius.circular(20)),
+        ),
+        child: Center(
+          child: Text(
+            'Prefer not to disclose',
+            style: isSelected ? text40018black : text40018primary,
+          ),
         ),
       ),
     );

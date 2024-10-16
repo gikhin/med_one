@@ -1,8 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:med_one/view/Home_pages/my%20profile/Faq.dart';
 
 import '../../../app_colors.dart';
 import '../../../widgets/CustomWidgets.dart';
+import 'Medication history.dart';
 import 'edit profile.dart';
 
 class ProfilePage extends StatelessWidget {
@@ -18,7 +20,7 @@ class ProfilePage extends StatelessWidget {
               Container(
                 height: 300,
                 decoration: BoxDecoration(
-                  color: AppColors.primaryColor2,// Purple color
+                  color: AppColors.primaryColor,// Purple color
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(60),
                     bottomRight: Radius.circular(60),
@@ -93,7 +95,7 @@ class ProfilePage extends StatelessWidget {
                   icon: Icons.medical_services,
                   title: 'Medication History',
                   onTap: () {
-                    // Navigate to Medication history
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => MedicationHistories(),));
                   },
                 ),
                 ProfileMenuItem(
@@ -107,7 +109,7 @@ class ProfilePage extends StatelessWidget {
                   icon: Icons.help_outline,
                   title: 'FAQ',
                   onTap: () {
-                    // Navigate to FAQ
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => FAQPage(),));
                   },
                 ),
                 ProfileMenuItem(
@@ -186,7 +188,7 @@ class ProfileMenuItem extends StatelessWidget {
       ),
       trailing: CircleAvatar(
           backgroundColor: AppColors.containercolor,
-          child: Icon(Icons.arrow_forward_ios, color: Colors.grey)),
+          child: Icon(Icons.arrow_forward_ios, color: Colors.grey,size: 15,)),
       onTap: onTap,
     );
   }

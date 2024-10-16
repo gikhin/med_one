@@ -36,6 +36,12 @@ dependencies:
   image_picker:
   animated_bottom_navigation_bar:
   curved_navigation_bar:
+  lottie: ^3.1.2
+  dotted_border: ^2.1.0
+  http:
+  flutter_typeahead: ^4.0.0
+
+
 
   flutter:
     sdk: flutter
@@ -78,6 +84,8 @@ flutter:
     - assets/icons/belliconnotselected.png
     - assets/icons/homeicon.png
     - assets/icons/homeiconnotselected.png
+    - assets/icons/calendar-day.png
+    - assets/icons/info (2).png
 
 
     - assets/images/doctor.png
@@ -90,6 +98,16 @@ flutter:
     - assets/images/ointment.png
     - assets/images/medicine.png
     - assets/images/gallery.png
+    - assets/images/awaken.png
+    - assets/images/breakfast 1.png
+    - assets/images/exercising.png
+    - assets/images/lunch-box.png
+    - assets/images/roti 1.png
+    - assets/images/s.png
+    - assets/images/sleep.png
+
+    - assets/lottie/profiledone.json
+    - assets/lottie/profiledone1.json
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

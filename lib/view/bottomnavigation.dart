@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
+import 'package:med_one/app_colors.dart';
 import 'package:med_one/view/Home_pages/Notifications.dart';
 import 'package:med_one/view/Home_pages/homepage.dart';
 import 'package:med_one/view/Creating%20Profile/Adding%20medcine%20one.dart';
@@ -25,7 +26,7 @@ class _BottomNavigationState extends State<BottomNavigation> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Scaffold(backgroundColor: AppColors.pageColor,
       body: PageView(
         controller: _pageController,
         onPageChanged: (index) {
@@ -38,7 +39,7 @@ class _BottomNavigationState extends State<BottomNavigation> {
       ),
       bottomNavigationBar: CurvedNavigationBar(
         backgroundColor: Colors.transparent,
-        color: Colors.teal,
+        color:AppColors.primaryColor2,
         height: 60,
         index: _pageIndex, // Set the current index to match the page view
         items: <Widget>[
@@ -60,7 +61,7 @@ class _BottomNavigationState extends State<BottomNavigation> {
           Icon(
             Icons.person,
             size: 30,
-            color: _pageIndex == 3 ? Colors.white : Colors.grey,
+            color: _pageIndex == 3 ? Colors.white : Colors.white.withOpacity(0.3),
           ),
         ],
         onTap: (index) {
