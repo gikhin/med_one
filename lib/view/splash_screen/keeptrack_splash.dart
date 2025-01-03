@@ -8,19 +8,21 @@ import 'SetReminder.dart';
 class MedicationTrackerScreen extends StatefulWidget {
   final String name;
   final String gender;
-  final String dateOfBirth;
+  // final String dateOfBirth;
   final String healthCondition;
   final String height;
   final String weight;
+  final String profileImage;
 
   // Constructor to receive user data
   MedicationTrackerScreen({
     required this.name,
     required this.gender,
-    required this.dateOfBirth,
+    // required this.dateOfBirth,
     required this.healthCondition,
     required this.height,
     required this.weight,
+    required this.profileImage,
   });
 
   @override
@@ -38,9 +40,10 @@ class _MedicationTrackerScreenState extends State<MedicationTrackerScreen> {
           builder: (context) => Timesplash(
             name: widget.name,
             gender: widget.gender,
-            dateOfBirth: widget.dateOfBirth,
+            // dateOfBirth: widget.dateOfBirth,
             healthCondition: widget.healthCondition
             , height: widget.height, weight: widget.weight,
+            profileImage: widget.profileImage,
 
           ), // Replace with your next page
         ),

@@ -1,49 +1,478 @@
+
+import 'dart:async';
+import 'dart:math';
+import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+
+import 'package:bounce/bounce.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:another_flushbar/flushbar.dart';
-import 'package:lottie/lottie.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
+import 'dart:convert'; // For json decoding
 import 'package:med_one/app_colors.dart'; // Adjust the import according to your project structure
+import 'package:med_one/res/appurl.dart';
+import 'package:med_one/view/Home_pages/my%20profile/edit%20profile.dart';
 import 'package:med_one/widgets/CustomWidgets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../Utils.dart';
 import '../../constants.dart';
-import '../Creating Profile/Adding medcine one.dart'; // Adjust as necessary for your text styles
+import '../../main.dart';
+import '../Creating Profile/Pastorder.dart';
+import 'chat_bot/Chatbot.dart';
 
 class Homescreen extends StatefulWidget {
   @override
   _HomescreenState createState() => _HomescreenState();
 }
 
-class _HomescreenState extends State<Homescreen> {
-  // List of medicines with colors from AppColors
-  final List<Map<String, dynamic>> medicines = [
-    {
-      'name': 'Insulin',
-      'instruction': 'Scheduled for 8:00AM',
-      'pillCount': 'Take 1 (s)',
-      'color': AppColors.homecardcolor1, // Use AppColors
-    },
-    {
-      'name': 'Vitamin D',
-      'instruction': 'Scheduled for 1:00PM',
-      'pillCount': 'Take 1 pill(s)',
-      'color': AppColors.homecardcolor2, // Use AppColors
-    },
-    {
-      'name': 'Aspirin',
-      'instruction': 'Scheduled for 8:00PM',
-      'pillCount': 'Take 1 pill(s)',
-      'color': AppColors.homecardcolor3, // Use AppColors
-    },
-    {
-      'name': 'Loratadine',
-      'instruction': 'Scheduled for 8:00AM',
-      'pillCount': 'Take 1 pill(s)',
-      'color': AppColors.homecardcolor4, // Use AppColors
-    },
-  ];
+class _HomescreenState extends State<Homescreen> with SingleTickerProviderStateMixin {
+
+  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+  FlutterLocalNotificationsPlugin();
+
+  // void _setupFCM() async {
+  //   // Request permission for notifications
+  //   NotificationSettings settings = await _firebaseMessaging.requestPermission();
+  //
+  //   // Handle foreground messages
+  //   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+  //     if (message.notification != null) {
+  //       print('Message Title: ${message.notification?.title}');
+  //       print('Message Body: ${message.notification?.body}');
+  //     }
+  //   });
+  //
+  //   // Handle background and terminated state
+  //   FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+  //     // Navigate or handle the message accordingly
+  //   });
+  // }
+
+  void _setupFCM()async{
+    NotificationSettings settings = await _firebaseMessaging.requestPermission();
+
+    // Handle foreground messages
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
+      if (message.notification != null) {
+        print('Message Title: ${message.notification?.title}');
+        print('Message Body: ${message.notification?.body}');
+
+        // Show the notification manually using local notifications
+        await _showNotification(
+          message.notification?.title ?? 'No Title',
+          message.notification?.body ?? 'No Body',
+        );
+      }
+    });
+
+    // Handle background and terminated state
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      // Navigate or handle the message accordingly
+    });
+  }
+
+  // Function to show a local notification
+  Future<void> _showNotification(String title, String body) async {
+    var androidDetails = AndroidNotificationDetails(
+      'your_channel_id', // channel ID
+      'your_channel_name', // channel name
+      channelDescription: 'your_channel_description',
+      importance: Importance.high,
+      priority: Priority.high,
+    );
+
+    var platformDetails = NotificationDetails(android: androidDetails);
+
+    await flutterLocalNotificationsPlugin.show(
+      0, // notification ID
+      title,
+      body,
+      platformDetails,
+      payload: 'Notification Payload',
+    );
+  }
+
+  void _retrieveToken() async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+
+    String? userId = preferences.getString('userID');
+
+    String? token = await _firebaseMessaging.getToken();
+
+    preferences.setString('fcmToken', token!);
+
+    print("FCM Token from sharedprefrences : $token");
+
+    Utils.sendfcmtoken(token!);
+
+    // Save the token to send push notifications
+  }
+
+  Future<void> firebaseNotificationget(int userId, String fcmToken) async {
+    print('periodicaly  called....');
+    final String url = AppUrl.firebaseNotification;  // Replace with your actual API URL
+
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+
+    // String? userId = preferences.getString('userID');
+    String? fcmtokensp = preferences.getString('fcmtoken');
+
+    // Prepare the data to be sent in the body
+    final Map<String, dynamic> body = {
+      // "userId": int.parse(userId.toString()),
+      "userId": int.parse(userId.toString()),
+      "fcmToken": fcmtokensp,
+    };
+
+    print('set akk monuse $userId');
+    print('send fcm $fcmToken');
+    print('send fcm $url');
+    try {
+      // Send the POST request
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',  // Set content type to JSON
+        },
+        body: json.encode(body),  // Encode body as JSON
+      );
+
+      print('helooooo${response.statusCode}');
+      print('oooi:${response.body}');
+      // Handle the response
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] == true) {
+          _showNotification('${data['data']}', "body");
+          print('sssssss${data}');
+        } else {
+          print('hellll: ${data['message']}');
+        }
+      } else {
+        print('Error here: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error: $e');
+    }
+  }
+
+// Function to call sendFcmToken every minute
+//   void startSendingTokenPeriodically() {
+//     // Set the interval to 1 minute (60 seconds)
+//     Timer.periodic(Duration(minutes: 1), (timer) async {
+//       SharedPreferences preferences = await SharedPreferences.getInstance();
+//
+//       // Retrieve userId and fcmtoken from SharedPreferences
+//       String? userId = preferences.getString('userID');
+//       String? fcmtoken = preferences.getString('fcmToken');
+//
+//       // Log the FCM token for debugging
+//       print('Stored FCM token: $fcmtoken');
+//
+//       // Check if userId and fcmtoken are available
+//       if (userId != null && fcmtoken != null) {
+//         print('Sending FCM token for userId $userId');
+//
+//         // Call the function to send the FCM token to the backend
+//         await firebaseNotificationget(int.parse(userId), fcmtoken);
+//       } else {
+//         print('Error: userId or FCM token is missing');
+//       }
+//     });
+//   }
+
+
+  ///fcmnoti ended
+
+
+  Future<List<Map<String, dynamic>>>? futureMedicines;
+
+  String? token;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Initialize local notifications
+    var initializationSettings = InitializationSettings(
+      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+
+    );
+    flutterLocalNotificationsPlugin.initialize(initializationSettings);
+
+
+    _setupFCM();
+    _retrieveToken();
+    // startSendingTokenPeriodically();
+    futureMedicines = fetchMedicineSchedule(context); // Initialize the Future here
+    _loadUserName();
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    )..repeat(reverse: true); // Repeat the animation with reverse
+
+    _animation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOut,
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+  String userName = '';
+  @override
+
+  Future<void> _loadUserName() async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    setState(() {
+      userName = preferences.getString("userName") ?? 'No user name found';
+    });
+  }
+
+  String _getFirstLetter() {
+    if (userName.isNotEmpty && userName != 'No user name found') {
+      return userName[0].toUpperCase();
+    }
+    return '?';
+  }
+
+  // void _retrieveToken() async {
+  //   // Get the FCM token
+  //   token = await _firebaseMessaging.getToken();
+  //
+  //   if (token != null) {
+  //     print("FCM Token: $token");
+  //
+  //     // Send the token to the server
+  //     SharedPreferences preferences = await SharedPreferences.getInstance();
+  //     String? userId = preferences.getString('userID');
+  //
+  //     if (userId != null) {
+  //       firebaseNotificationget(int.parse(userId), token!);
+  //     } else {
+  //       print("User ID is not found in SharedPreferences");
+  //     }
+  //   } else {
+  //     print("Failed to retrieve FCM Token");
+  //   }
+  // }
+
+
+
+
+  Future<List<Map<String, dynamic>>> fetchMedicineSchedule(BuildContext context) async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    String? userId = preferences.getString('userID');
+    final url = AppUrl.notifyMedicineSchedule;
+
+    // List of colors
+    final List<Color> colors = [
+      AppColors.homecardcolor1,
+      AppColors.homecardcolor2,
+      AppColors.homecardcolor3,
+      AppColors.homecardcolor4,
+      AppColors.homecardcolor5,
+      AppColors.homecardcolor6,
+      AppColors.homecardcolor7,
+      AppColors.homecardcolor8,
+      AppColors.homecardcolor9,
+      AppColors.homecardcolor10,
+    ];
+
+    // Map medicine types to images
+    final Map<String, String> medicineTypeImages = {
+      'Pills': 'assets/images/medicine.png',
+      'Syringe': 'assets/images/syringe.png',
+      'Syrup': 'assets/images/syrup.png',
+      'Ointment': 'assets/images/ointment.png',
+    };
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({"userid": int.parse(userId.toString())}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        print('medicine $data');
+        if (data['success']) {
+          return List<Map<String, dynamic>>.from(data['notifications'].asMap().entries.map((entry) {
+            int index = entry.key;
+            var item = entry.value;
+
+            // Get medicine type image
+            String? medicineType = item['medicine_type'];
+            String image = medicineTypeImages[medicineType] ?? 'assets/images/medicine.png';
+
+
+            return {
+            'name': item['medicine'] ?? 'Unknown Medicine',
+            'instruction': item['notificationTime'],
+            'pillCount': 'Take 1 pill(s)',
+            'color': colors[index % colors.length],
+            'medicine_timetableID': item['medicine_timetableID'],
+            'image': image, // Add image path
+            };
+          })).where((medicine) => medicine['name'] != null).toList();
+        } else {
+          showFlushbar(context, data['message'], Colors.red);
+          return [];
+        }
+      } else {
+        showFlushbar(context, 'Failed to fetch data', Colors.red);
+        return [];
+      }
+    } catch (e) {
+      showFlushbar(context, 'Error: $e', Colors.red);
+      return [];
+    }
+  }
+
+  void showFlushbar(BuildContext context, String message, Color color) {
+    Flushbar(
+      message: message,
+      duration: Duration(seconds: 3),
+      backgroundColor: color,
+      flushbarPosition: FlushbarPosition.TOP,
+    ).show(context);
+  }
+  String getMealPeriod() {
+    final currentTime = DateTime.now();
+    final currentHours = currentTime.hour;
+
+    if (currentHours >= 5 && currentHours < 11) {
+      return "morning";
+    } else if (currentHours >= 11 && currentHours < 17) {
+      return "lunch";
+    } else if (currentHours >= 17 && currentHours < 24) {
+      return "dinner";
+    } else {
+      return "Night"; // Optional: handle times between 12 AM - 5 AM
+    }
+  }
+
+  Future<void> changeStatus(int timetableId, String status, String takenStatus) async {
+    final url = AppUrl.statusChanging; // Your API URL for changing status
+    final takenTime = getMealPeriod(); // Get the meal period based on current time
+
+    try {
+
+      SharedPreferences preferences = await SharedPreferences.getInstance();
+      String? userID = preferences.getString('userID');
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          "userId": int.parse(userID.toString()),
+          "timetableId": timetableId,
+          "status": status,
+          "takenTime": takenTime, // Pass meal period as takenTime
+          "takenStatus": takenStatus,  // Assuming takenStatus matches the status
+        }),
+      );
+      print(takenTime);
+
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        print('Aaa $data');
+        if (data['success']) {
+          showFlushbar(context, 'Status updated to $status', Colors.green);
+        } else {
+          showFlushbar(context, 'Failed to update status: ${data['message']}', Colors.red);
+        }
+      } else {
+        showFlushbar(context, 'Failed to update status', Colors.red);
+      }
+    } catch (e) {
+      showFlushbar(context, 'Error: $e', Colors.red);
+    }
+  }
+
+
+// Future<void> changeStatus(int timetableId, String status, String takenTime) async {
+  //   final url = AppUrl.statusChanging; // Your API URL for changing status
+  //   try {
+  //     SharedPreferences preferences = await SharedPreferences.getInstance();
+  //     String? userID = preferences.getString('userID');
+  //     final response = await http.post(
+  //       Uri.parse(url),
+  //       headers: {'Content-Type': 'application/json'},
+  //       body: json.encode({
+  //         "userId": int.parse(userID.toString()),
+  //         "timetableId": timetableId,
+  //         "status": status,
+  //         "takenTime": takenTime,
+  //         "takenStatus": status, // Assuming takenStatus matches the status
+  //       }),
+  //     );
+  //     print(takenTime);
+  //
+  //     if (response.statusCode == 200) {
+  //       final data = json.decode(response.body);
+  //       if (data['success']) {
+  //         showFlushbar(context, 'Status updated to $status', Colors.green);
+  //       } else {
+  //         showFlushbar(context, 'Failed to update status: ${data['message']}', Colors.red);
+  //       }
+  //     } else {
+  //       showFlushbar(context, 'Failed to update status', Colors.red);
+  //     }
+  //   } catch (e) {
+  //     showFlushbar(context, 'Error: $e', Colors.red);
+  //   }
+  // }
+
+  late final AnimationController _controller;
+  late final Animation<double> _animation;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.pageColor,
+
+      floatingActionButton:
+      // ScaleTransition(
+      //   scale: _animation,
+      //   child:
+        Row(mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            // ElevatedButton(
+            //   style: ElevatedButton.styleFrom(
+            //     backgroundColor: AppColors.primaryColor2,
+            //   ),
+            //   onPressed: () {
+            //     Navigator.push(context, MaterialPageRoute(builder: (context) => MedicineListPastorder(),));
+            //     print("Button clicked!");
+            //   },
+            //   child: const Text('Past order',style: text50014,),
+            // ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryColor2,
+              ),
+              onPressed: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => ChatbotScreen(),));
+                print("Button clicked!");
+              },
+              child: const Text('Chatbot',style: text50014,),
+            ),
+          ],
+        ),
+      // ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       appBar: AppBar(
         elevation: 0,
         backgroundColor: AppColors.pageColor,
@@ -51,7 +480,17 @@ class _HomescreenState extends State<Homescreen> {
         actions: [
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: CircleAvatar(),
+            child: CircleAvatar(backgroundColor: AppColors.primaryColor2,
+              child: TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => EditProfilePage()),
+                  );
+                },
+                child: Text( _getFirstLetter(),style: text40018,),
+              ),
+            ),
           ),
         ],
       ),
@@ -61,36 +500,67 @@ class _HomescreenState extends State<Homescreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text("Hi,", style: text60022bla),
-              SizedBox(height: 9),
-              Text("HEAVN JOE", style: text60022bla),
-              SizedBox(height: 15),
-              Text("Today’s Medicine", style: text60022bla),
-              Text("Reminder", style: text60022bla),
-              SizedBox(height: 10,),
-        
-              SizedBox(
-                height: 250,
-                child: Stack(
-                  children: List.generate(medicines.length, (index) {
-                    final medicine = medicines[index];
-                    return Positioned(
-        
-                      bottom: index * 20.0, // Adjust the position based on index
-                      left: 0,
-                      right: 0,
-                      child: buildDismissibleCard(
-                        color: medicine['color'], // Use the color from the list
-                        medicineName: medicine['name'],
-                        instruction: medicine['instruction'],
-                        pillcount: medicine['pillCount'],
-                      ),
-                    );
-                  }),
-                ),
+              Row(
+                children: [
+                  Text("Hi,", style: text60022bla),
+                  SizedBox(width: 9),
+                  InkWell(
+                      onTap: (){
+
+                      },
+                      child: Text(userName, style: text60022bla)),
+                ],
               ),
 
-            
+              SizedBox(height: 15),
+              Text("Today’s Medicine", style: text60031black),
+              Text("Reminder", style: text60031black),
+              SizedBox(height: 35),
+
+              FutureBuilder<List<Map<String, dynamic>>>(  // Use FutureBuilder to fetch medicines
+                future: futureMedicines,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Center(child: CircularProgressIndicator());
+                  } else if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return Center(child: Text('No medicines for today.'));
+                  } else {
+                    final medicines = snapshot.data!;
+                    return SizedBox(
+                      height: MediaQuery.of(context).size.height - 10,
+                      child: Stack(
+                        children: List.generate(medicines.length, (index) {
+                          // final medicine = medicines[index];
+                          final reversedIndex = medicines.length - 1 - index; // Reverse the index
+                          final medicine = medicines[reversedIndex];
+
+
+                          return Positioned(
+                          top: (medicines.length - 1 - index) * 20.0,
+                          // bottom: (medicines.length - 1 - index) * 20.0,
+                          left: 0,
+                          right: 0,
+                          child: buildDismissibleCard(
+                          index: index,
+                          totalCards: medicines.length,
+                          color: medicine['color'],
+                          medicineName: medicine['name'].toString(),
+                          instruction: medicine['instruction'],
+                          pillcount: medicine['pillCount'],
+                          // pillcount: medicine['medicine_timetableID'].toString(),
+                          timetableId: medicine['medicine_timetableID'],
+                          image: medicine['image'],
+                          ),
+                          );
+                        }),
+                      ),
+                    );
+                  }
+                },
+              ),
+
             ],
           ),
         ),
@@ -103,56 +573,170 @@ class _HomescreenState extends State<Homescreen> {
     required String medicineName,
     required String instruction,
     required String pillcount,
+    required int timetableId,
+    required int index, // Add index parameter
+    required int totalCards, // Add totalCards parameter to compare
+    required String image,
   }) {
-    return Dismissible(
-      key: UniqueKey(),
-      background: Container(
-        color: Colors.green,
-        alignment: Alignment.centerLeft,
-        padding: EdgeInsets.only(left: 20),
-        child: Text(
-          'Taken',
-          style: TextStyle(color: Colors.white, fontSize: 18),
-        ),
-      ),
-      secondaryBackground: Container(
-        color: Colors.red,
-        alignment: Alignment.centerRight,
-        padding: EdgeInsets.only(right: 20),
-        child: Text(
-          'Skipped',
-          style: TextStyle(color: Colors.white, fontSize: 18),
-        ),
-      ),
-      onDismissed: (direction) {
-        if (direction == DismissDirection.startToEnd) {
-          // Swiped right (Taken)
-          showFlushbar(context, '$medicineName marked as taken', Colors.green);
-        } else {
-          // Swiped left (Skipped)
-          showFlushbar(context, '$medicineName marked as skipped', Colors.red);
-        }
-      },
-      child: Stack(
-        children: [
-          Container(
-            height: 180,
-            margin: EdgeInsets.symmetric(vertical: 10),
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(9),
+    // Check if the card is the topmost card
+    if (index == totalCards - 1) {
+      return Dismissible(
+        key: UniqueKey(),
+        background: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Container(
+            color: Colors.green,
+            alignment: Alignment.centerLeft,
+            padding: EdgeInsets.only(left: 20),
+            child: Text(
+              'Taken',
+              style: TextStyle(color: Colors.white, fontSize: 18),
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
+          ),
+        ),
+        secondaryBackground: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Container(
+            color: Colors.red,
+            alignment: Alignment.centerRight,
+            padding: EdgeInsets.only(right: 20),
+            child: Text(
+              'Skipped',
+              style: TextStyle(color: Colors.white, fontSize: 18),
+            ),
+          ),
+        ),
+        onDismissed: (direction) {
+          String status = direction == DismissDirection.startToEnd ? 'Taken' : 'Skipped';
+          String takenTime = DateFormat.jm().format(DateTime.now()); // Current time in "HH:mm a" format
+          String takenStatus = direction == DismissDirection.startToEnd ? 'Yes' : 'No';
+          // changeStatus(timetableId, status, takenTime
+          changeStatus(timetableId, status,takenStatus
+          ); // Call changeStatus with the timetableId
+        },
+        child: buildCardContent(color, medicineName, instruction, pillcount,image),
+      );
+    } else {
+      // For all other cards, return a static container (not swipable)
+      return buildCardContent(color, medicineName, instruction, pillcount,image);
+    }
+  }
+
+
+// Helper function to create card content
+  Widget buildCardContent(Color color, String medicineName, String instruction, String pillcount, String? image) {
+    return Stack(
+      children: [
+        Container(
+          height: 180,
+          margin: EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(9),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Image.asset('assets/images/medicine.png'),
-                    ],
-                  ),
-                  Text(medicineName, style: text60022),
+              Stack(
+              children: [
+              Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  image != null && image.isNotEmpty
+                      ? Image.asset(image)
+                      : Image.asset('assets/images/medicine.png'), // Default image
+                ],
+              ),
+              Positioned(
+                right: 60, // Adjust the position
+                child: IconButton(
+                  onPressed: () async {
+                    Utils.launchAsInAppWebViewWithCustomHeaders(Uri.parse('https://youtube.com/shorts/dlsoFpl6unY?si=n2JyUzNnc8Wat1B2'));
+                    // const url = 'https://youtube.com/shorts/dlsoFpl6unY?si=n2JyUzNnc8Wat1B2';
+                    // final Uri uri = Uri.parse(url);
+                    //
+                    // if (await canLaunchUrl(Uri.parse(url))) {
+                    //   await launchUrl(
+                    //     Uri.parse(url),
+                    //     mode: LaunchMode.externalApplication, // Opens in an external browser
+                    //   );
+                    // } else {
+                    //   // Handle the case where the URL cannot be launched
+                    //   ScaffoldMessenger.of(context).showSnackBar(
+                    //     SnackBar(
+                    //       content: Text('Could not launch the URL'),
+                    //     ),
+                    //   );
+                    // }
+                  },
+                  icon: const Icon(Icons.play_circle, color: Colors.white),
+                )
+
+              ),
+              Positioned(
+                right: 30, // Adjust the position
+                child: IconButton(
+                  onPressed: () {
+                    print('Sss $medicineName');
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ChatbotScreen(
+                          medicineName: medicineName,
+
+                        ),
+                      ),
+                    );
+                  },
+                  icon: Icon(Icons.info_outline, color: AppColors.whiteColor),
+                ),
+              ),
+                Positioned(
+                    right: 10, // Adjust the position
+                    child:
+                    PopupMenuButton<String>(
+                      onSelected: (value) async {
+                        if (value == 'edit') {
+
+
+                        } else if (value == 'delete') {
+
+
+                        }
+                      },
+                      icon: const Icon(Icons.more_vert_rounded, color: Colors.white),
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                          value: 'edit',
+                          child: Row(
+                            children: const [
+                              SizedBox(width: 8),
+                              Text('Edit'),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: 'delete',
+                          child: Row(
+                            children: const [
+
+                              SizedBox(width: 8),
+                              Text('Delete'),
+                            ],
+                          ),
+                        ),
+                      ],
+                    )
+
+
+                ),
+              ],
+            ),
+
+              Text(medicineName, style: text60022),
                   SizedBox(height: 10),
                   Row(
                     children: [
@@ -161,7 +745,7 @@ class _HomescreenState extends State<Homescreen> {
                       Text(instruction, style: text40014),
                     ],
                   ),
-                  SizedBox(height: 10,),
+                  SizedBox(height: 10),
                   Row(
                     children: [
                       Image.asset('assets/icons/info (2).png', height: 15, width: 15),
@@ -173,35 +757,631 @@ class _HomescreenState extends State<Homescreen> {
               ),
             ),
           ),
-          Positioned(
-            top: 10,
-            right: 10,
-            child: Image.asset(
-              'assets/images/doctor.png',
-              height: 130.06,
-              width: 130.63,
-            ),
+        ),
+        Positioned(
+          bottom: 10,
+          right: 10,
+          child: Image.asset(
+            'assets/images/doctor.png',
+            height: 100,
+            width: 100,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  void showFlushbar(BuildContext context, String message, Color backgroundColor) {
-    Flushbar(
-      message: message,
-      duration: Duration(seconds: 3),
-      backgroundColor: backgroundColor,
-      flushbarPosition: FlushbarPosition.TOP,
-      borderRadius: BorderRadius.circular(8),
-      margin: EdgeInsets.all(8),
-    )..show(context);
-  }
-
-
-
-
-
-
 
 }
+
+
+
+
+
+
+
+
+// import 'dart:async';
+// import 'dart:math';
+//
+// import 'package:firebase_messaging/firebase_messaging.dart';
+// import 'package:flutter/cupertino.dart';
+// import 'package:flutter/material.dart';
+// import 'package:another_flushbar/flushbar.dart';
+// import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+// import 'package:http/http.dart' as http;
+// import 'package:intl/intl.dart';
+// import 'dart:convert'; // For json decoding
+// import 'package:med_one/app_colors.dart'; // Adjust the import according to your project structure
+// import 'package:med_one/res/appurl.dart';
+// import 'package:med_one/view/Home_pages/my%20profile/edit%20profile.dart';
+// import 'package:med_one/widgets/CustomWidgets.dart';
+// import 'package:shared_preferences/shared_preferences.dart';
+// import '../../Utils.dart';
+// import '../../constants.dart';
+// import '../../main.dart';
+//
+// class Homescreen extends StatefulWidget {
+//   @override
+//   _HomescreenState createState() => _HomescreenState();
+// }
+//
+// class _HomescreenState extends State<Homescreen> {
+//
+//   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+//
+//   void _setupFCM() async {
+//     // Request permission for notifications
+//     NotificationSettings settings = await _firebaseMessaging.requestPermission();
+//
+//     // Handle foreground messages
+//     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+//       if (message.notification != null) {
+//         print('Message Title: ${message.notification?.title}');
+//         print('Message Body: ${message.notification?.body}');
+//       }
+//     });
+//
+//     // Handle background and terminated state
+//     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+//       // Navigate or handle the message accordingly
+//     });
+//   }
+//   void _retrieveToken() async {
+//     SharedPreferences preferences = await SharedPreferences.getInstance();
+//     String? userId = preferences.getString('userID');
+//
+//     String? token = await _firebaseMessaging.getToken();
+//     preferences.setString('fcmToken', token!);
+//     print("FCM Token: $token");
+//     Utils.sendfcmtoken(token!);
+//
+//     // Save the token to send push notifications
+//   }
+//
+//   Future<List<Map<String, dynamic>>>? futureMedicines;
+//
+//   String? token;
+//
+//   @override
+//   void initState() {
+//     super.initState();
+//     _setupFCM();
+//     _retrieveToken();
+//     futureMedicines = fetchMedicineSchedule(context); // Initialize the Future here
+//     _loadUserName();
+//     // startSendingTokenPeriodically();
+//   }
+//   String userName = '';
+//   @override
+//
+//   Future<void> _loadUserName() async {
+//     SharedPreferences preferences = await SharedPreferences.getInstance();
+//     setState(() {
+//       userName = preferences.getString("userName") ?? 'No user name found'; // Retrieve user name
+//     });
+//   }
+//
+//   // void _retrieveToken() async {
+//   //   // Get the FCM token
+//   //   token = await _firebaseMessaging.getToken();
+//   //
+//   //   if (token != null) {
+//   //     print("FCM Token: $token");
+//   //
+//   //     // Send the token to the server
+//   //     SharedPreferences preferences = await SharedPreferences.getInstance();
+//   //     String? userId = preferences.getString('userID');
+//   //
+//   //     if (userId != null) {
+//   //       firebaseNotificationget(int.parse(userId), token!);
+//   //     } else {
+//   //       print("User ID is not found in SharedPreferences");
+//   //     }
+//   //   } else {
+//   //     print("Failed to retrieve FCM Token");
+//   //   }
+//   // }
+//
+//   Future<void> firebaseNotificationget(int userId, String fcmToken) async {
+//     print('periodicaly  called....');
+//     final String url = AppUrl.firebaseNotification;  // Replace with your actual API URL
+//     SharedPreferences preferences = await SharedPreferences.getInstance();
+//     String? userId = preferences.getString('userID');
+//     // Prepare the data to be sent in the body
+//     final Map<String, dynamic> body = {
+//       "userId": int.parse(userId.toString()),
+//       "fcmToken": fcmToken,
+//     };
+//     print('set akk monuse $userId');
+//     print('send fcm $fcmToken');
+//     print('send fcm $url');
+//     try {
+//       // Send the POST request
+//       final response = await http.post(
+//         Uri.parse(url),
+//         headers: {
+//           'Content-Type': 'application/json',  // Set content type to JSON
+//         },
+//         body: json.encode(body),  // Encode body as JSON
+//       );
+//
+//       print('helooooo${response.statusCode}');
+//       // Handle the response
+//       if (response.statusCode == 200) {
+//         final data = json.decode(response.body);
+//         if (data['success']) {
+//           print('sssssss${data}');
+//         } else {
+//           print('hellll: ${data['message']}');
+//         }
+//       } else {
+//         print('Error here: ${response.statusCode}');
+//       }
+//     } catch (e) {
+//       print('Error: $e');
+//     }
+//   }
+//
+// // Function to call sendFcmToken every minute
+// //   void startSendingTokenPeriodically() {
+// //     // Set the interval to 1 minute (60 seconds)
+// //     Timer.periodic(Duration(minutes: 1), (timer) async {
+// //       SharedPreferences preferences = await SharedPreferences.getInstance();
+// //       String? userId = preferences.getString('userID');
+// //       String? fcmtoken = preferences.getString('fcmToken');
+// //       firebaseNotificationget(int.parse(userId.toString()), token!);
+// //     });
+// //   }
+//
+// ///fnoti
+//
+//
+//   // Future<List<Map<String, dynamic>>> fetchMedicineSchedule() async {
+//   //   SharedPreferences preferences = await SharedPreferences.getInstance();
+//   //   String? userId = preferences.getString('userID');
+//   //   final url = AppUrl.notifyMedicineSchedule;
+//   //
+//   //   // List of colors
+//   //   final List<Color> colors = [
+//   //     AppColors.homecardcolor1,
+//   //     AppColors.homecardcolor2,
+//   //     AppColors.homecardcolor3,
+//   //     AppColors.homecardcolor4,
+//   //         AppColors.homecardcolor5,
+//   //         AppColors.homecardcolor6,
+//   //         AppColors.homecardcolor7,
+//   //         AppColors.homecardcolor8,
+//   //         AppColors.homecardcolor9,
+//   //         AppColors.homecardcolor10,
+//   //   ];
+//   //
+//   //   try {
+//   //     final response = await http.post(
+//   //       Uri.parse(url),
+//   //       headers: {'Content-Type': 'application/json'},
+//   //       body: json.encode({"userid": int.parse(userId.toString())}),
+//   //     );
+//   //
+//   //     if (response.statusCode == 200) {
+//   //       final data = json.decode(response.body);
+//   //       print('medicine $data');
+//   //       if (data['success']) {
+//   //         return List<Map<String, dynamic>>.from(data['notifications'].asMap().entries.map((entry) {
+//   //           int index = entry.key;
+//   //           var item = entry.value;
+//   //
+//   //           return {
+//   //             'name': item['medicine'] ?? 'Unknown Medicine',
+//   //             'instruction': item['notificationTime'],
+//   //             'pillCount': 'Take 1 pill(s)',
+//   //             'color': colors[index % colors.length], // Assign color based on index
+//   //             'medicine_timetableID': item['medicine_timetableID'],
+//   //           };
+//   //         })).where((medicine) => medicine['name'] != null).toList();
+//   //       } else {
+//   //         showFlushbar(context, data['message'], Colors.red);
+//   //         return [];
+//   //       }
+//   //     } else {
+//   //       showFlushbar(context, 'Failed to fetch data', Colors.red);
+//   //       return [];
+//   //     }
+//   //   } catch (e) {
+//   //     showFlushbar(context, 'Error: $e', Colors.red);
+//   //     return [];
+//   //   }
+//   // }
+//
+//   Future<List<Map<String, dynamic>>> fetchMedicineSchedule(BuildContext context) async {
+//     SharedPreferences preferences = await SharedPreferences.getInstance();
+//     String? userId = preferences.getString('userID');
+//     final url = AppUrl.notifyMedicineSchedule;
+//
+//     final List<Color> colors = [
+//       AppColors.homecardcolor1,
+//       AppColors.homecardcolor2,
+//       AppColors.homecardcolor3,
+//       AppColors.homecardcolor4,
+//       AppColors.homecardcolor5,
+//       AppColors.homecardcolor6,
+//       AppColors.homecardcolor7,
+//       AppColors.homecardcolor8,
+//       AppColors.homecardcolor9,
+//       AppColors.homecardcolor10,
+//     ];
+//
+//     final Map<String, String> medicineTypeImages = {
+//       'Pills': 'assets/images/medicine.png',
+//       'Syringe': 'assets/images/syringe.png',
+//       'Syrup': 'assets/images/syrup.png',
+//       'Ointment': 'assets/images/ointment.png',
+//     };
+//
+//     try {
+//       final response = await http.post(
+//         Uri.parse(url),
+//         headers: {'Content-Type': 'application/json'},
+//         body: json.encode({"userid": int.parse(userId.toString())}),
+//       );
+//
+//       if (response.statusCode == 200) {
+//         final data = json.decode(response.body);
+//         print('medicine $data');
+//         if (data['success']) {
+//           final dateFormat = DateFormat('dd/MM/yyyy, hh:mm:ss a'); // Adjust format to match your date string
+//
+//           return List<Map<String, dynamic>>.from(data['notifications'].asMap().entries.map((entry) {
+//             int index = entry.key;
+//             var item = entry.value;
+//
+//             String? medicineType = item['medicine_type'];
+//             String image = medicineTypeImages[medicineType] ?? 'assets/images/default_medicine.png';
+//
+//             // Parse and format the date
+//             DateTime date;
+//             try {
+//               date = dateFormat.parse(item['notificationDateTimeISO']);
+//             } catch (e) {
+//               date = DateTime.now(); // Fallback if parsing fails
+//             }
+//
+//             String formattedDate = DateFormat('dd MMM yyyy, hh:mm a').format(date);
+//
+//             return {
+//               'name': item['medicine'] ?? 'Unknown Medicine',
+//               'instruction': formattedDate,
+//               'pillCount': 'Take 1 pill(s)',
+//               'color': colors[index % colors.length],
+//               'medicine_timetableID': item['medicine_timetableID'],
+//               'image': image,
+//             };
+//           })).where((medicine) => medicine['name'] != null).toList();
+//         } else {
+//           showFlushbar(context, data['message'], Colors.red);
+//           return [];
+//         }
+//       } else {
+//         showFlushbar(context, 'Failed to fetch data', Colors.red);
+//         return [];
+//       }
+//     } catch (e) {
+//       showFlushbar(context, 'Error: $e', Colors.red);
+//       return [];
+//     }
+//   }
+//
+//
+//   String getMealPeriod() {
+//     final currentTime = DateTime.now();
+//     final currentHours = currentTime.hour;
+//
+//     if (currentHours >= 5 && currentHours < 11) {
+//       return "Morning";
+//     } else if (currentHours >= 11 && currentHours < 17) {
+//       return "lunch";
+//     } else if (currentHours >= 17 && currentHours < 24) {
+//       return "dinner";
+//     } else {
+//       return "Night"; // Optional: handle times between 12 AM - 5 AM
+//     }
+//   }
+//
+//   Future<void> changeStatus(int timetableId, String status, String takenStatus) async {
+//     final url = AppUrl.statusChanging; // Your API URL for changing status
+//     final takenTime = getMealPeriod(); // Get the meal period based on current time
+//
+//     try {
+//
+//       SharedPreferences preferences = await SharedPreferences.getInstance();
+//       String? userID = preferences.getString('userID');
+//       final response = await http.post(
+//         Uri.parse(url),
+//         headers: {'Content-Type': 'application/json'},
+//         body: json.encode({
+//           "userId": int.parse(userID.toString()),
+//           "timetableId": timetableId,
+//           "status": status,
+//           "takenTime": takenTime, // Pass meal period as takenTime
+//           "takenStatus": takenStatus,  // Assuming takenStatus matches the status
+//         }),
+//       );
+//       print(takenTime);
+//
+//
+//       if (response.statusCode == 200) {
+//         final data = json.decode(response.body);
+//         print('Aaa $data');
+//         if (data['success']) {
+//           showFlushbar(context, 'Status updated to $status', Colors.green);
+//         } else {
+//           showFlushbar(context, 'Failed to update status: ${data['message']}', Colors.red);
+//         }
+//       } else {
+//         showFlushbar(context, 'Failed to update status', Colors.red);
+//       }
+//     } catch (e) {
+//       showFlushbar(context, 'Error: $e', Colors.red);
+//     }
+//   }
+//
+//   void showFlushbar(BuildContext context, String message, Color color) {
+//     Flushbar(
+//       message: message,
+//       duration: Duration(seconds: 3),
+//       backgroundColor: color,
+//       flushbarPosition: FlushbarPosition.TOP,
+//     ).show(context);
+//   }
+//
+//   // Future<void> changeStatus(int timetableId, String status, String takenTime) async {
+//   //   final url = AppUrl.statusChanging; // Your API URL for changing status
+//   //   try {
+//   //     SharedPreferences preferences = await SharedPreferences.getInstance();
+//   //     String? userID = preferences.getString('userID');
+//   //     final response = await http.post(
+//   //       Uri.parse(url),
+//   //       headers: {'Content-Type': 'application/json'},
+//   //       body: json.encode({
+//   //         "userId": int.parse(userID.toString()),
+//   //         "timetableId": timetableId,
+//   //         "status": status,
+//   //         "takenTime": takenTime,
+//   //         "takenStatus": status, // Assuming takenStatus matches the status
+//   //       }),
+//   //     );
+//   //     print(takenTime);
+//   //
+//   //     if (response.statusCode == 200) {
+//   //       final data = json.decode(response.body);
+//   //       if (data['success']) {
+//   //         showFlushbar(context, 'Status updated to $status', Colors.green);
+//   //       } else {
+//   //         showFlushbar(context, 'Failed to update status: ${data['message']}', Colors.red);
+//   //       }
+//   //     } else {
+//   //       showFlushbar(context, 'Failed to update status', Colors.red);
+//   //     }
+//   //   } catch (e) {
+//   //     showFlushbar(context, 'Error: $e', Colors.red);
+//   //   }
+//   // }
+//
+//
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       backgroundColor: AppColors.pageColor,
+//       appBar: AppBar(
+//         elevation: 0,
+//         backgroundColor: AppColors.pageColor,
+//         automaticallyImplyLeading: false,
+//         actions: [
+//           Padding(
+//             padding: const EdgeInsets.all(8.0),
+//             child: CircleAvatar(
+//               child: IconButton(
+//                 onPressed: () {
+//                   Navigator.push(
+//                     context,
+//                     MaterialPageRoute(builder: (context) => EditProfilePage()),
+//                   );
+//                 },
+//                 icon: Icon(Icons.person_2_outlined),
+//               ),
+//             ),
+//           ),
+//         ],
+//       ),
+//       body: SingleChildScrollView(
+//         child: Padding(
+//           padding: const EdgeInsets.all(12.0),
+//           child: Column(
+//             crossAxisAlignment: CrossAxisAlignment.start,
+//             children: [
+//               Row(
+//                 children: [
+//                   Text("Hi,", style: text60022bla),
+//                   SizedBox(width: 9),
+//                   InkWell(
+//                       onTap: (){
+//
+//                       },
+//                       child: Text(userName, style: text60022bla)),
+//                 ],
+//               ),
+//
+//               SizedBox(height: 15),
+//               Text("Today’s Medicine", style: text60031black),
+//               Text("Reminder", style: text60031black),
+//               SizedBox(height: 35),
+//         FutureBuilder<List<Map<String, dynamic>>>(
+//           future: futureMedicines,
+//           builder: (context, snapshot) {
+//             if (snapshot.connectionState == ConnectionState.waiting) {
+//               return Center(child: CircularProgressIndicator());
+//             } else if (snapshot.hasError) {
+//               return Center(child: Text('Error: ${snapshot.error}'));
+//             } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+//               return Center(child: Text('No medicines for today.'));
+//             } else {
+//               final medicines = snapshot.data!;
+//               return SizedBox(
+//                 height: MediaQuery.of(context).size.height - 10,
+//                 child: Stack(
+//                   children: List.generate(medicines.length, (index) {
+//                     final reversedIndex = medicines.length - 1 - index;
+//                     final medicine = medicines[reversedIndex];
+//
+//                     String notificationTime = medicine['instruction'];
+//                     print('Before conversion: $notificationTime');
+//
+//                     // Adjust the format to match the structure of `instruction`.
+//                     DateTime medTakingTime;
+//                     try {
+//                       medTakingTime = DateFormat('dd/MM/yyyy, hh:mm:ss a').parse(notificationTime);
+//                     } catch (e) {
+//                       print('Date parsing error: $e');
+//                       medTakingTime = DateTime.now(); // Fallback in case of parsing error
+//                     }
+//
+//                     print('Converted DateTime: $medTakingTime');
+//
+//                     return Positioned(
+//                       top: reversedIndex * 20.0,
+//                       left: 0,
+//                       right: 0,
+//                       child: buildDismissibleCard(
+//                         index: index,
+//                         totalCards: medicines.length,
+//                         color: medicine['color'],
+//                         medicineName: medicine['name'].toString(),
+//                         instruction: notificationTime, // Display the original formatted string
+//                         pillCount: medicine['pillCount'].toString(),
+//                         timetableId: medicine['medicine_timetableID'],
+//                         image: medicine['image'],
+//                         medTakingtime: medTakingTime, // Pass the parsed DateTime
+//                       ),
+//                     );
+//                   }),
+//                 ),
+//               );
+//             }
+//           },
+//         )
+//
+//
+//         ],
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+//
+//   Widget buildDismissibleCard({
+//     required Color color,
+//     required String medicineName,
+//     required String instruction,
+//     required String pillCount,
+//     required int timetableId,
+//     required int index,
+//     required int totalCards,
+//     required String image,
+//     required DateTime medTakingtime
+//   }) {
+//     if (index == totalCards - 1) {
+//       return Dismissible(
+//         key: UniqueKey(),
+//         background: swipeBackground(Colors.green, Alignment.centerLeft, 'Taken'),
+//         secondaryBackground: swipeBackground(Colors.red, Alignment.centerRight, 'Skipped'),
+//         onDismissed: (direction) {
+//           String status = direction == DismissDirection.startToEnd ? 'Taken' : 'Skipped';
+//           String takenTime = DateFormat.jm().format(DateTime.now());
+//           String takenStatus = direction == DismissDirection.startToEnd ? 'Yes' : 'No';
+//           changeStatus(timetableId, status, takenStatus);
+//         },
+//         child: buildCardContent(color, medicineName, instruction, pillCount, image),
+//       );
+//     } else {
+//       return buildCardContent(color, medicineName, instruction, pillCount, image);
+//     }
+//   }
+//
+//   Widget swipeBackground(Color color, Alignment alignment, String label) {
+//     return Padding(
+//       padding: const EdgeInsets.all(16.0),
+//       child: Container(
+//         color: color,
+//         alignment: alignment,
+//         padding: alignment == Alignment.centerLeft ? EdgeInsets.only(left: 20) : EdgeInsets.only(right: 20),
+//         child: Text(label, style: TextStyle(color: Colors.white, fontSize: 18)),
+//       ),
+//     );
+//   }
+//
+//   Widget buildCardContent(Color color, String medicineName, String instruction, String pillCount, String image) {
+//     return Stack(
+//       children: [
+//         Container(
+//           height: 180,
+//           margin: EdgeInsets.symmetric(vertical: 10),
+//           decoration: BoxDecoration(
+//             color: color,
+//             borderRadius: BorderRadius.circular(9),
+//           ),
+//           child: Padding(
+//             padding: const EdgeInsets.all(8.0),
+//             child: SingleChildScrollView(
+//               child: Column(
+//                 crossAxisAlignment: CrossAxisAlignment.start,
+//                 children: [
+//                   Row(
+//                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//                     children: [
+//                       Image.asset(image.isNotEmpty ? image : 'assets/images/medicine.png'),
+//                     ],
+//                   ),
+//                   Text(medicineName, style: text60022),
+//                   SizedBox(height: 10),
+//                   Row(
+//                     children: [
+//                       Image.asset('assets/icons/calendar-day.png', height: 15, width: 15),
+//                       SizedBox(width: 10),
+//                       Text(instruction, style: text50014),
+//                     ],
+//                   ),
+//                   SizedBox(height: 10),
+//                   Row(
+//                     children: [
+//                       Image.asset('assets/icons/info (2).png', height: 15, width: 15),
+//                       SizedBox(width: 10),
+//                       Text(pillCount, style: text50014  ),
+//                     ],
+//                   ),
+//                 ],
+//               ),
+//             ),
+//           ),
+//         ),
+//         Positioned(
+//           bottom: 10,
+//           right: 10,
+//           child: Image.asset(
+//             'assets/images/doctor.png',
+//             height: 100,
+//             width: 100,
+//           ),
+//         ),
+//       ],
+//     );
+//   }
+//
+//   // void changeStatus(int timetableId, String status, String takenStatus) {
+//   //   // Implementation for changing the status, e.g., updating a database or API
+//   // }
+//
+//
+// }
+
+

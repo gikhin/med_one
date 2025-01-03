@@ -1,15 +1,19 @@
 import 'package:another_flushbar/flushbar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:med_one/app_colors.dart';
 import 'package:med_one/res/appurl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 import '../../constants.dart';
 import '../../widgets/CustomWidgets.dart';
 import 'Adding medcine one.dart';
+import 'Pastorder.dart';
+import 'ProfileConditions.dart';
 
 class DailyRoutine extends StatefulWidget {
   const DailyRoutine({super.key});
@@ -19,13 +23,14 @@ class DailyRoutine extends StatefulWidget {
 }
 
 class _DailyRoutineState extends State<DailyRoutine> {
+  int backPressCounter = 0; // Track back button presses
   DateTime currentDate = DateTime.now();
   List<TimeOfDay> selectedTimes = [
+    TimeOfDay(hour: 7, minute: 0),
     TimeOfDay(hour: 8, minute: 0),
-    TimeOfDay(hour: 10, minute: 0),
-    TimeOfDay(hour: 12, minute: 0),
-    TimeOfDay(hour: 18, minute: 0),
-    TimeOfDay(hour: 22, minute: 0),
+    TimeOfDay(hour: 9, minute: 0),
+    TimeOfDay(hour: 13, minute: 0),
+    TimeOfDay(hour: 20, minute: 0),
     TimeOfDay(hour: 22, minute: 0),
   ];
 
@@ -36,42 +41,49 @@ class _DailyRoutineState extends State<DailyRoutine> {
     return '$hours:$minutes $amPm';
   }
 
-  Map<String, dynamic> _convertToRoutine() {
+  Map<String, dynamic> _convertToRoutine(int userid)  {
+    
     return {
-      'userId': 45,
+      'userId': userid,
       'routine': [
         {
           'wakeUp': _timeOfDayToString(selectedTimes[0]),
           'breakfast': _timeOfDayToString(selectedTimes[1]),
-          'lunch': _timeOfDayToString(selectedTimes[2]),
-          'dinner': _timeOfDayToString(selectedTimes[3]),
-          'sleep': _timeOfDayToString(selectedTimes[4]),
+          'exercise': _timeOfDayToString(selectedTimes[2]),
+          'lunch': _timeOfDayToString(selectedTimes[3]),
+          'dinner': _timeOfDayToString(selectedTimes[4]),
+          'sleep': _timeOfDayToString(selectedTimes[5]),
         },
       ],
     };
   }
+  Future<void> _sendRoutineToBackend() async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    String? userId = preferences.getString('userID');
+    final routineData = _convertToRoutine(int.parse(userId.toString()));
+    final url = Uri.parse(AppUrl.addingRoutine);
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(routineData),
+      );
+      print('routtwwww ${routineData}');
+      print('ashannne ${response.body}');
+      print('ashannne ${response.statusCode}');
+      if (response.statusCode == 200) {
+        
+        _showFlushbar("Routine saved successfully!", Colors.green);
+        print('Routine saved: ${response.body}');
 
-  // Future<void> _sendRoutineToBackend() async {
-  //   final routineData = _convertToRoutine();
-  //   final url = Uri.parse(AppUrl.addingRoutine);
-  //   try {
-  //     final response = await http.post(
-  //       url,
-  //       headers: {'Content-Type': 'application/json'},
-  //       body: json.encode(routineData),
-  //     );
-  //     if (response.statusCode == 200) {
-  //       _showFlushbar("Routine saved successfully!", Colors.green);
-  //       print('Routine saved: ${response.body}');
-  //
-  //       _showMedicationOptionsDialog(context);
-  //     } else {
-  //       _showFlushbar("Failed to save routine. Error: ${response.statusCode}", Colors.red);
-  //     }
-  //   } catch (error) {
-  //     _showFlushbar("Error sending data: $error", Colors.red);
-  //   }
-  // }
+        _showMedicationOptionsDialog(context);
+      } else {
+        _showFlushbar("Failed to save routine. Error: ${response.statusCode}", Colors.red);
+      }
+    } catch (error) {
+      _showFlushbar("Error sending data: $error", Colors.red);
+    }
+  }
 
   void _showFlushbar(String message, Color color) {
     Flushbar(
@@ -90,6 +102,21 @@ class _DailyRoutineState extends State<DailyRoutine> {
     }
     return true; // Valid if all fields are filled
   }
+  String userName = '';
+  Future<void> _loadUserName() async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    setState(() {
+      userName = preferences.getString("userName") ?? 'No user name found';
+    });
+  }
+
+  String _getFirstLetter() {
+    if (userName.isNotEmpty && userName != 'No user name found') {
+      return userName[0].toUpperCase();
+    }
+    return '?';
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -109,8 +136,8 @@ class _DailyRoutineState extends State<DailyRoutine> {
                 TextButton(
                   onPressed: () {
                     if (_validateRoutine()) {
-                      // _sendRoutineToBackend();
-                      _showMedicationOptionsDialog(context);
+                      _sendRoutineToBackend();
+                      // _showMedicationOptionsDialog(context);
                     } else {
                       _showFlushbar("Please complete all fields before submitting.", Colors.red);
                     }
@@ -123,7 +150,39 @@ class _DailyRoutineState extends State<DailyRoutine> {
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      appBar: AppBar(leading: Dronewidgets.backButton(context)),
+      // appBar: AppBar(automaticallyImplyLeading: false,
+      //     actions: [
+      //       // ElevatedButton(onPressed: () {
+      //       //   Navigator.push(context, MaterialPageRoute(builder: (context) =>
+      //       //       AddingMedicineone(
+      //       //         // name: '',
+      //       //         // gender: '',
+      //       //         // dateOfBirth:'',
+      //       //         // healthCondition:'', // Pass the new field
+      //       //         // height: '', // Pass the new field
+      //       //         // weight: '', userId: 45, // Pass the new field
+      //       //       )));
+      //       //
+      //       // }, child: Text('Skip', style: text40018primary)),
+      //       Padding(
+      //         padding: const EdgeInsets.all(8.0),
+      //         child: CircleAvatar(backgroundColor: AppColors.primaryColor2,
+      //           child: TextButton(
+      //             onPressed: () {
+      //               // Navigator.push(
+      //               //   context,
+      //               //   MaterialPageRoute(builder: (context) => EditProfilePage()),
+      //               // );
+      //             },
+      //             child: Text( _getFirstLetter(),style: text40018,),
+      //           ),
+      //         ),
+      //       ),
+      //
+      //     ],
+      //
+      //     // leading: Dronewidgets.backButton(context)
+      // ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(10.0),
@@ -131,6 +190,7 @@ class _DailyRoutineState extends State<DailyRoutine> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                SizedBox(height: 20,),
                 Text.rich(
                   TextSpan(
                     children: [
@@ -140,35 +200,58 @@ class _DailyRoutineState extends State<DailyRoutine> {
                     ],
                   ),
                 ),
-                SizedBox(height: 30),
-                Stack(
-                  children: [
-                    Positioned(left: 80, child: _buildTimePickerContainer(0)),
-                    Container(
-                      child: Column(
-                        children: [
-                          SizedBox(height: 20),
-                          Stack(
+                SizedBox(height: 20),
+                Container(
+                  decoration: BoxDecoration(
+                  ),
+                  height: 500,
+                  child: Stack(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(),
+                        child: SingleChildScrollView(
+                          child: Column(
                             children: [
-                              Padding(padding: const EdgeInsets.all(20.0), child: Image.asset('assets/images/s.png')),
-                              Positioned(left: 10, child: _buildTooltip('Wake up', 'assets/images/awaken.png')),
-                              Positioned(right: 110, top: 60, child: _buildTimePickerContainer(1)),
-                              Positioned(right: 50, child: _buildTooltip('Exercise', 'assets/images/exercising.png')),
-                              Positioned(right: 110, top: 150, child: _buildTimePickerContainer(2)),
-                              Positioned(right: 50, top: 180, child: _buildTooltip('Breakfast', 'assets/images/breakfast 1.png')),
-                              Positioned(left: 80, top: 240, child: _buildTimePickerContainer(3)),
-                              Positioned(top: 240, left: 10, child: _buildTooltip('Lunch', 'assets/images/lunch-box.png')),
-                              Positioned(left: 80, top: 320, child: _buildTimePickerContainer(4)),
-                              Positioned(left: 100, top: 360, child: _buildTooltip('Dinner', 'assets/images/roti 1.png')),
-                              Positioned(top: 360, right: 40, child: _buildTooltip('Sleep', 'assets/images/sleep.png')),
-                              Positioned(right: 30, top: 320, child: _buildTimePickerContainer(5)),
+                              Center(
+                                child: Stack(
+                                  children: [
+                                    // Adjust the position of the first time picker (Wake up) and add some space above the asset
+                                    Positioned(left: 80, top: 10, child: _buildTimePickerContainer(0)),  // Moved top to 10 to make it more visible
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 50.0), // Added more space above the image
+                                      child: Image.asset('assets/images/s.png'),
+                                    ),
+                                    Positioned(left: 5,top: 22, child: _buildTooltip('Wake up', 'assets/images/awaken.png')),
+
+                                    // Other time pickers remain the same, but we can tweak them as needed for spacing and visibility
+                                    Positioned(right: 110, top: 90, child: _buildTimePickerContainer(1)),
+                                    Positioned(right: 50,top: 25, child: _buildTooltip('Exercise', 'assets/images/exercising.png')),
+
+                                    Positioned(right: 115, top: 190, child: _buildTimePickerContainer(2)),
+                                    Positioned(right: 50, top: 210, child: _buildTooltip('Breakfast', 'assets/images/breakfast 1.png')),
+
+                                    Positioned(left: 80, top: 270, child: _buildTimePickerContainer(3)),
+                                    Positioned(top: 240, left: 10, child: _buildTooltip('Lunch', 'assets/images/lunch-box.png')),
+
+                                    Positioned(left: 80, top: 360, child: _buildTimePickerContainer(4)),
+                                    Positioned(left: 80, top: 400, child: _buildTooltip('Dinner', 'assets/images/roti 1.png')),
+
+                                    Positioned(top: 400, right: 20, child: _buildTooltip('Sleep', 'assets/images/sleep.png')),
+                                    Positioned(right: 20, top: 360, child: _buildTimePickerContainer(5)),
+                                    SizedBox(height: 500,)
+
+
+                                  ],
+                                ),
+                              ),
                             ],
                           ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+
               ],
             ),
           ),
@@ -183,7 +266,7 @@ class _DailyRoutineState extends State<DailyRoutine> {
       child: Container(
         width: 100,
         decoration: BoxDecoration(
-          color: Colors.grey.shade300,
+          color: Colors.grey.shade100,
           borderRadius: BorderRadius.circular(50),
         ),
         child: Padding(
@@ -214,17 +297,53 @@ class _DailyRoutineState extends State<DailyRoutine> {
   }
 
 
+  // void _showMedicationOptionsDialog(BuildContext context) {
+  //   showDialog(
+  //     context: context,
+  //     builder: (BuildContext context) => AlertDialog(
+  //       backgroundColor: AppColors.containercolor,
+  //
+  //       content: medicationOptionsContainer(context),
+  //
+  //     ),
+  //   );
+  // }
+
   void _showMedicationOptionsDialog(BuildContext context) {
+    bool _backPressedOnce = false;
+
     showDialog(
       context: context,
-      builder: (BuildContext context) => AlertDialog(
-        backgroundColor: AppColors.containercolor,
-
-        content: medicationOptionsContainer(context),
-
+      barrierDismissible: false, // Prevents closing when tapping outside the dialog
+      builder: (BuildContext context) => WillPopScope(
+        onWillPop: () async {
+          if (_backPressedOnce) {
+            // If back is pressed again, close the dialog
+            return true;
+          } else {
+            // Show "Press back again to exit" message
+            _backPressedOnce = true;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Press back again to exit'),
+                duration: Duration(seconds: 2),
+              ),
+            );
+            Future.delayed(Duration(seconds: 2), () {
+              _backPressedOnce = false; // Reset after 2 seconds
+            });
+            return false; // Prevent dialog from closing on the first back press
+          }
+        },
+        child: AlertDialog(
+          backgroundColor: AppColors.containercolor,
+          content: medicationOptionsContainer(context),
+        ),
       ),
     );
   }
+
+
 
   // Your medicationOptionsContainer function
   static Widget medicationOptionsContainer(BuildContext context) {
@@ -245,7 +364,8 @@ class _DailyRoutineState extends State<DailyRoutine> {
           SizedBox(height: 20),
           // "Past order" button
           Dronewidgets.mainButton(title: 'Past order', onPressed: (){
-            Navigator.pop(context);
+            Navigator.push(context, MaterialPageRoute(builder: (context) => MedicineListPastorder(),));
+            // Navigator.pop(context);
 
           }
           ),

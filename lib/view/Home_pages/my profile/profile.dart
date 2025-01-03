@@ -1,13 +1,49 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:med_one/view/Creating%20Profile/daily_routine.dart';
 import 'package:med_one/view/Home_pages/my%20profile/Faq.dart';
+import 'package:med_one/view/Home_pages/my%20profile/My%20medicine.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../app_colors.dart';
+import '../../../constants.dart';
 import '../../../widgets/CustomWidgets.dart';
+import '../../Login Page.dart';
+import 'Edit Routine.dart';
 import 'Medication history.dart';
 import 'edit profile.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
+
+
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  String userName = '';
+  @override
+  void initState() {
+    _loadUserName();
+    // TODO: implement initState
+    super.initState();
+  }
+
+  Future<void> _loadUserName() async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    setState(() {
+      userName = preferences.getString("userName") ?? 'No user name found';
+    });
+  }
+
+  String _getFirstLetter() {
+    if (userName.isNotEmpty && userName != 'No user name found') {
+      return userName[0].toUpperCase();
+    }
+    return '?';
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -50,28 +86,41 @@ class ProfilePage extends StatelessWidget {
                 right: 0,
                 child: Column(
                   children: [
-                    CircleAvatar(
-                      radius: 50,
-                      child: Icon(CupertinoIcons.person),
+                    // CircleAvatar(
+                    //   radius: 50,
+                    //   child: Icon(CupertinoIcons.person),
+                    //
+                    //   // You can also use Image.asset if you have a local image
+                    // ),
 
-                      // You can also use Image.asset if you have a local image
-                    ),
-                    SizedBox(height: 10),
+                  CircleAvatar(backgroundColor: AppColors.primaryColor2,radius: 50,
+                  child: TextButton(
+                    onPressed: () {
+                      // Navigator.push(
+                      //   context,
+                      //   MaterialPageRoute(builder: (context) => EditProfilePage()),
+                      // );
+                    },
+                    child: Text( _getFirstLetter(),style: text40023,),
+                  ),
+                ),
+                    SizedBox(height: 30),
+
                     Text(
-                      'Cris Joe',
+                      userName,
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
                     ),
-                    Text(
-                      'crisJoe@gmail.com',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.white,
-                      ),
-                    ),
+                    // Text(
+                    //   'crisJoe@gmail.com',
+                    //   style: TextStyle(
+                    //     fontSize: 16,
+                    //     color: Colors.white,
+                    //   ),
+                    // ),
                   ],
                 ),
               ),
@@ -90,6 +139,13 @@ class ProfilePage extends StatelessWidget {
                    Navigator.push(context, MaterialPageRoute(builder: (context) => EditProfilePage(),));
                   },
                 ),
+                ProfileMenuItem(
+                  icon: Icons.medical_services_outlined,
+                  title: 'My Medicine',
+                  onTap: () {
+                   Navigator.push(context, MaterialPageRoute(builder: (context) => Mymedicine(),));
+                  },
+                ),
 
                 ProfileMenuItem(
                   icon: Icons.medical_services,
@@ -99,21 +155,21 @@ class ProfilePage extends StatelessWidget {
                   },
                 ),
                 ProfileMenuItem(
-                  icon: Icons.settings,
-                  title: 'Settings',
+                  icon: Icons.edit,
+                  title: 'Edit Routine',
                   onTap: () {
-                    // Navigate to Profile page
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => EditDailyRoutine(),));
                   },
                 ),
                 ProfileMenuItem(
-                  icon: Icons.help_outline,
+                  icon: Icons.help,
                   title: 'FAQ',
                   onTap: () {
                     Navigator.push(context, MaterialPageRoute(builder: (context) => FAQPage(),));
                   },
                 ),
                 ProfileMenuItem(
-                  icon: Icons.info_outline,
+                  icon: Icons.info,
                   title: 'About App',
                   onTap: () {
                     // Navigate to About App
@@ -138,21 +194,23 @@ class ProfilePage extends StatelessWidget {
   void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Logout'),
           content: Text('Are you sure you want to logout?'),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
+                // Close the dialog
+                Navigator.of(context).pop();
               },
               child: Text('Cancel'),
             ),
             TextButton(
-              onPressed: () {
-                // Handle logout logic here
-                Navigator.of(context).pop(); // Close the dialog
+              onPressed: () async {
+                // Call the logout function and navigate back to the login screen
+                await logout();
+
               },
               child: Text('Logout'),
             ),
@@ -161,7 +219,21 @@ class ProfilePage extends StatelessWidget {
       },
     );
   }
+
+  // Function to clear SharedPreferences and perform logout actions
+  Future<void> logout() async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    await preferences.clear();
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => LoginPage()), // Replace with your LoginPage widget
+          (Route<dynamic> route) => false, // This will remove all previous routes
+    );
+    // Clear all preferences or use specific remove as needed
+    // Optionally, you can navigate to the login screen or perform other actions
+    print('User logged out and preferences cleared.');
+  }
 }
+
 
 class ProfileMenuItem extends StatelessWidget {
   final IconData icon;

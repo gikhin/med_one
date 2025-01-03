@@ -6,28 +6,30 @@ import '../../constants.dart';
 import '../../widgets/CustomWidgets.dart';
 import 'ProfileConditions.dart';
 
-class CalendarProfile extends StatefulWidget {
+class date_ofbirt_page extends StatefulWidget {
   final String name;
   final String gender;
-  final String dateOfBirth; // Added
+  // final String dateOfBirth; // Added
   final String healthCondition; // Added
   final String height; // Added
   final String weight; // Added
+  final String profileImage; // Added
 
-  CalendarProfile({
+  date_ofbirt_page({
     required this.name,
     required this.gender,
-    required this.dateOfBirth, // Added
+    // required this.dateOfBirth, // Added
     required this.healthCondition, // Added
     required this.height, // Added
     required this.weight, // Added
+    required this.profileImage, // Added
   });
 
   @override
-  _CalendarProfileState createState() => _CalendarProfileState();
+  _date_ofbirt_pageState createState() => _date_ofbirt_pageState();
 }
 
-class _CalendarProfileState extends State<CalendarProfile> {
+class _date_ofbirt_pageState extends State<date_ofbirt_page> {
   DateTime selectedDate = DateTime.now();
   int age = 0;
   String previousDateOfBirth = ""; // To track the previous date of birth
@@ -36,13 +38,13 @@ class _CalendarProfileState extends State<CalendarProfile> {
   void initState() {
     super.initState();
     // Parse dateOfBirth and set selectedDate if it's not empty
-    if (widget.dateOfBirth.isNotEmpty) {
-      // Use DateFormat to parse the date from the string
-      DateFormat dateFormat = DateFormat('dd/MM/yyyy'); // Adjust to match your input format
-      selectedDate = dateFormat.parse(widget.dateOfBirth);
-      previousDateOfBirth = widget.dateOfBirth; // Store the original date of birth
-      age = calculateAge(selectedDate);
-    }
+    // if (widget.dateOfBirth.isNotEmpty) {
+    //   // Use DateFormat to parse the date from the string
+    //   DateFormat dateFormat = DateFormat('dd/MM/yyyy'); // Adjust to match your input format
+    //   selectedDate = dateFormat.parse(widget.dateOfBirth);
+    //   previousDateOfBirth = widget.dateOfBirth; // Store the original date of birth
+    //   age = calculateAge(selectedDate);
+    // }
   }
 
   int calculateAge(DateTime birthDate) {
@@ -79,7 +81,7 @@ class _CalendarProfileState extends State<CalendarProfile> {
           String newDateOfBirth = DateFormat('dd/MM/yyyy').format(selectedDate); // Change the format to dd/MM/yyyy
 
           // Check if the date of birth has changed
-          String dateOfBirthToPass = (newDateOfBirth != previousDateOfBirth) ? newDateOfBirth : widget.dateOfBirth;
+          String dateOfBirthToPass = (newDateOfBirth != previousDateOfBirth) ? newDateOfBirth : '01/01/2000';
 
           Navigator.push(
             context,
@@ -90,7 +92,8 @@ class _CalendarProfileState extends State<CalendarProfile> {
                 dateOfBirth: dateOfBirthToPass, // Pass the new or old date of birth
                 healthCondition: widget.healthCondition, // Pass health condition
                 height: widget.height, // Pass height
-                weight: widget.weight, // Pass weight
+                weight: widget.weight,
+                profileImage: widget.profileImage,// Pass weight
               ),
             ),
           );
@@ -125,10 +128,12 @@ class _CalendarProfileState extends State<CalendarProfile> {
               ),
               SizedBox(height: 10),
               Text(
-                'Lorem Ipsum is simply dummy text of the printing and typesetting industry.',
+                'Select your date of birth to personalize your experience.',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Colors.grey),
               ),
+
+
               SizedBox(height: 20),
               SizedBox(height: 40),
               Container(
@@ -164,7 +169,7 @@ class _CalendarProfileState extends State<CalendarProfile> {
                     children: [
                       Text(
                         DateFormat('dd/MM/yyyy').format(selectedDate), // Use dd/MM/yyyy format for displayed date
-                        style: TextStyle(fontSize: 18),
+                        style: TextStyle(fontSize: 18,color: Colors.grey),
                       ),
                       Icon(Icons.calendar_today, color: Colors.black),
                     ],

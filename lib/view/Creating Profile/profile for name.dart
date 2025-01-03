@@ -9,20 +9,23 @@ import 'calender.dart'; // Import CalendarProfile
 class ProfileName extends StatefulWidget {
   final String name;
   final String gender;
-  final String dateOfBirth;
+  // final String dateOfBirth;
   final String healthCondition;
   final String height;
   final String weight;
+  final String profileImage;
+
 
   // Constructor to receive user data
   const ProfileName({
     Key? key,
     required this.name,
     required this.gender,
-    required this.dateOfBirth,
+    // required this.dateOfBirth,
     required this.healthCondition,
     required this.height,
     required this.weight,
+    required this.profileImage,
   }) : super(key: key);
 
   @override
@@ -88,13 +91,14 @@ class _ProfileNameState extends State<ProfileName> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => CalendarProfile(
+                  builder: (context) => date_ofbirt_page(
                     name: _nameController.text,
                     gender: _selectedGender!,
-                    dateOfBirth: widget.dateOfBirth, // Pass the existing date of birth
+                    // dateOfBirth: widget.dateOfBirth, // Pass the existing date of birth
                     healthCondition: widget.healthCondition, // Pass the existing health condition
                     height: widget.height, // Pass the existing height
-                    weight: widget.weight, // Pass the existing weight
+                    weight: widget.weight,
+                    profileImage: widget.profileImage,// Pass the existing weight
                   ),
                 ),
               );
@@ -103,7 +107,8 @@ class _ProfileNameState extends State<ProfileName> {
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      appBar: AppBar(automaticallyImplyLeading: false,
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: Colors.white,
         // leading: Dronewidgets.backButton(context),
       ),
@@ -124,7 +129,7 @@ class _ProfileNameState extends State<ProfileName> {
                 ),
                 Text("Together", style: text50026black),
                 const SizedBox(height: 8),
-                Text('Your name please', style: text50030),
+                // Text('Your name please', style: text50030),
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: TextField(

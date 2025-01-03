@@ -9,20 +9,22 @@ import '../Creating Profile/profile for name.dart';
 class Timesplash extends StatefulWidget {
   final String name;
   final String gender;
-  final String dateOfBirth;
+  // final String dateOfBirth;
   final String healthCondition;
   final String height;
   final String weight;
+  final String profileImage;
 
   // Constructor to receive user data
   const Timesplash({
     Key? key,
     required this.name,
     required this.gender,
-    required this.dateOfBirth,
+    // required this.dateOfBirth,
     required this.healthCondition,
     required this.height,
     required this.weight,
+    required this.profileImage,
   }) : super(key: key);
 
   @override
@@ -42,9 +44,10 @@ class _TimesplashState extends State<Timesplash> {
           Navigator.push(context, MaterialPageRoute(builder: (context) => ProfileName(
             name: widget.name,
             gender: widget.gender,
-            dateOfBirth: widget.dateOfBirth,
+            // dateOfBirth: widget.dateOfBirth,
             healthCondition: widget.healthCondition
             , height: widget.height, weight: widget.weight,
+            profileImage: widget.profileImage,
           ),));
             },backgroundColor: Colors.white),
       ),
