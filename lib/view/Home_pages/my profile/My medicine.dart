@@ -14,17 +14,33 @@ class Mymedicine extends StatefulWidget {
 }
 
 class _MymedicineState extends State<Mymedicine> {
-  // Replace this URL with your actual API endpoint
-  static const String apiUrl = "YOUR_API_ENDPOINT_HERE";
 
+  final Map<String, String> medicineTypeImages = {
+    'Pills': 'assets/images/medicine.png',
+    'Syringe': 'assets/images/syringe.png',
+    'Syrup': 'assets/images/syrup.png',
+    'Ointment': 'assets/images/ointment.png',
+  };
   Future<List<Map<String, dynamic>>> fetchMedicines() async {
-    final url = Uri.parse(AppUrl.getmyMedicine); // Replace with actual API URL
+    final Map<String, String> medicineTypeImages = {
+      'Pills': 'assets/images/medicine.png',
+      'Syringe': 'assets/images/syringe.png',
+      'Syrup': 'assets/images/syrup.png',
+      'Ointment': 'assets/images/ointment.png',
+    };
+
+    final url = Uri.parse(AppUrl.getmyMedicine);
     SharedPreferences preferences = await SharedPreferences.getInstance();
     String? userId = preferences.getString('userID');
+
+    if (userId == null || userId.isEmpty) {
+      throw Exception("User ID is missing or invalid");
+    }
+
     final response = await http.post(
       url,
       headers: {"Content-Type": "application/json"},
-      body: jsonEncode({"userId": int.parse(userId.toString())}),
+      body: jsonEncode({"userId": int.parse(userId)}),
     );
 
     if (response.statusCode == 200) {
@@ -32,14 +48,17 @@ class _MymedicineState extends State<Mymedicine> {
       if (responseData['success']) {
         final List<Map<String, dynamic>> medicines = [];
 
-        // Process response to create a list of medicines with type and startDate
         for (var entry in responseData['data']) {
           for (var item in entry['medicine']) {
+            String medicineType = entry['medicine_type'] ?? 'Unknown';
+            String image = medicineTypeImages[medicineType] ?? 'assets/images/medicine.png';
+
             medicines.add({
               "id": item['id'],
               "name": item['name'],
-              "medicine_type": entry['medicine_type'],
+              "medicine_type": medicineType,
               "startDate": entry['startDate'],
+              "image": image,
             });
           }
         }
@@ -51,6 +70,8 @@ class _MymedicineState extends State<Mymedicine> {
       throw Exception("Failed to load medicines");
     }
   }
+
+
 
 
   void showFeedbackDialog(int medicineId) {
@@ -225,22 +246,44 @@ class _MymedicineState extends State<Mymedicine> {
                         ),
                       ],
                     ),
-                    child: ListTile(tileColor: Colors.white,
-                      title: Text(
+                    child: ListTile(
+                      leading: Image.asset(
+                        medicine['image'], // Display the corresponding image
+                        height: 40.0, // Adjust the size as needed
+                        width: 40.0,
+                      ),
+                      tileColor: Colors.white,
+                      title:  Text(
                         medicine['name'],
                         style: text40016black,
                       ),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text("Type: ${medicine['medicine_type']}"),
+
+                          // Text("Type: ${medicine['medicine_type']}"),
+
                           Text("Start Date: ${medicine['startDate']}"),
                         ],
                       ),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.reviews_rounded, color: Colors.blue),
+                      trailing: ElevatedButton(
                         onPressed: () => showFeedbackDialog(medicine['id']),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryColor,
+                          shape: const StadiumBorder(),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          minimumSize: const Size(0, 0),
+                          tapTargetSize:
+                          MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: const Text(
+                          'Feedback',
+                          style: TextStyle(
+                              color: Colors.white, fontSize: 12),
+                        ),
                       ),
+
                     ),
                   ),
                 );
@@ -252,5 +295,3 @@ class _MymedicineState extends State<Mymedicine> {
     );
   }
 }
-
-

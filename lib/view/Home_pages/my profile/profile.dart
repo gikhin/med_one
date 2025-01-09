@@ -161,20 +161,20 @@ class _ProfilePageState extends State<ProfilePage> {
                     Navigator.push(context, MaterialPageRoute(builder: (context) => EditDailyRoutine(),));
                   },
                 ),
-                ProfileMenuItem(
-                  icon: Icons.help,
-                  title: 'FAQ',
-                  onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => FAQPage(),));
-                  },
-                ),
-                ProfileMenuItem(
-                  icon: Icons.info,
-                  title: 'About App',
-                  onTap: () {
-                    // Navigate to About App
-                  },
-                ),
+                 // ProfileMenuItem(
+                //   icon: Icons.help,
+                //   title: 'FAQ',
+                //   onTap: () {
+                //     Navigator.push(context, MaterialPageRoute(builder: (context) => FAQPage(),));
+                //   },
+                // ),
+                // ProfileMenuItem(
+                //   icon: Icons.info,
+                //   title: 'About App',
+                //   onTap: () {
+                //     // Navigate to About App
+                //   },
+                // ),
                 ProfileMenuItem(
                   icon: Icons.logout,
                   title: 'Logout',

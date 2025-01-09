@@ -51,6 +51,10 @@ class AppUrl{
 
   static var medicationHistory = '$baseUrl/medicationhistory';
 
+  static var selectPastOrderMedicine = '$baseUrl/selectPastOrderMedicine';
+
+  static var getCompleteMedicine = '$baseUrl/getCompleteMedicine';
+
   static var chatbot = '$baseUrl/updatedchat';
 
   static var addtoken = '$baseUrl/addToken';

@@ -362,7 +362,7 @@ class _LoginPageState extends State<LoginPage> {
                               children: [
                                 Padding(
                                   padding: const EdgeInsets.only(left: 8.0),
-                                  child: Text('Email / Phone number', style: text40012black),
+                                  child: Text('Email', style: text40012black),
                                 ),
                                 SizedBox(height: 10),
                                 Dronewidgets.customTextFormField(

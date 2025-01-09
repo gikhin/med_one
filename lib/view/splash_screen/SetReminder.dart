@@ -4,6 +4,9 @@ import 'package:med_one/widgets/CustomWidgets.dart';
 
 import '../../app_colors.dart';
 import '../../constants.dart';
+import '../Creating Profile/Adding medcine one.dart';
+import '../Creating Profile/Pastorder.dart';
+import '../Creating Profile/daily_routine.dart';
 import '../Creating Profile/profile for name.dart';
 
 class Timesplash extends StatefulWidget {
@@ -41,14 +44,15 @@ class _TimesplashState extends State<Timesplash> {
         padding: const EdgeInsets.only(right: 15.0,left: 15.0),
         child: Dronewidgets.mainButton(title: 'Start',textColor: AppColors.primaryColor2,
             onPressed: (){
-          Navigator.push(context, MaterialPageRoute(builder: (context) => ProfileName(
-            name: widget.name,
-            gender: widget.gender,
-            // dateOfBirth: widget.dateOfBirth,
-            healthCondition: widget.healthCondition
-            , height: widget.height, weight: widget.weight,
-            profileImage: widget.profileImage,
-          ),));
+              _showMedicationOptionsDialog(context);
+          // Navigator.push(context, MaterialPageRoute(builder: (context) => ProfileName(
+          //   name: widget.name,
+          //   gender: widget.gender,
+          //   // dateOfBirth: widget.dateOfBirth,
+          //   healthCondition: widget.healthCondition
+          //   , height: widget.height, weight: widget.weight,
+          //   profileImage: widget.profileImage,
+          // ),));
             },backgroundColor: Colors.white),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
@@ -131,6 +135,79 @@ class _TimesplashState extends State<Timesplash> {
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+  void _showMedicationOptionsDialog(BuildContext context) {
+    bool _backPressedOnce = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Prevents closing when tapping outside the dialog
+      builder: (BuildContext context) => WillPopScope(
+        onWillPop: () async {
+          if (_backPressedOnce) {
+            // If back is pressed again, close the dialog
+            return true;
+          } else {
+            // Show "Press back again to exit" message
+            _backPressedOnce = true;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Press back again to exit'),
+                duration: Duration(seconds: 2),
+              ),
+            );
+            Future.delayed(Duration(seconds: 2), () {
+              _backPressedOnce = false; // Reset after 2 seconds
+            });
+            return false; // Prevent dialog from closing on the first back press
+          }
+        },
+        child: AlertDialog(
+          backgroundColor: AppColors.containercolor,
+          content: medicationOptionsContainer(context),
+        ),
+      ),
+    );
+  }
+
+
+
+  // Your medicationOptionsContainer function
+  static Widget medicationOptionsContainer(BuildContext context) {
+    return Container(
+
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Do you have any past orders or need to add it manually?',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.normal,
+              color: Colors.grey,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 20),
+          // "Past order" button
+          Dronewidgets.mainButton(title: 'Past order', onPressed: (){
+            Navigator.push(context, MaterialPageRoute(builder: (context) => MedicineListPastorder(),));
+
+
+
+          }
+          ),
+          SizedBox(height: 12),
+          // "Add Medication" button
+          Dronewidgets.mainButton(title: 'Add Medication', onPressed: (){
+            // Navigator.push(context, MaterialPageRoute(builder: (context) => AddingMedicineone()));
+            Navigator.push(context, MaterialPageRoute(builder: (context) => DailyRoutine(),));
+
+          })
+
         ],
       ),
     );

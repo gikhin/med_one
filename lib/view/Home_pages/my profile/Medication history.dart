@@ -9,6 +9,7 @@ import 'package:med_one/constants.dart';
 import '../../../app_colors.dart';
 import '../../../res/appurl.dart';
 import '../../../widgets/CustomWidgets.dart';
+import 'edit profile.dart';
 
 class MedicationHistories extends StatefulWidget {
   const MedicationHistories({super.key});
@@ -26,8 +27,22 @@ class _MedicationHistoriesState extends State<MedicationHistories> {
   void initState() {
     super.initState();
     fetchMedicationHistory(); // Fetch medication history on widget initialization
+    _loadUserName();
+  }
+  String userName = '';
+  Future<void> _loadUserName() async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    setState(() {
+      userName = preferences.getString("userName") ?? 'No user name found';
+    });
   }
 
+  String _getFirstLetter() {
+    if (userName.isNotEmpty && userName != 'No user name found') {
+      return userName[0].toUpperCase();
+    }
+    return '?';
+  }
   Future<void> fetchMedicationHistory() async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
     String? userId = preferences.getString('userID');
@@ -118,11 +133,21 @@ class _MedicationHistoriesState extends State<MedicationHistories> {
         elevation: 0,
         backgroundColor: AppColors.pageColor,
         leading: Dronewidgets.backButton(context),
-        actions: const [
+        actions: [
           Padding(
-            padding: EdgeInsets.all(8.0),
-            child: CircleAvatar(),
-          )
+            padding:  EdgeInsets.all(8.0),
+            child: CircleAvatar(backgroundColor: AppColors.primaryColor2,
+              child: TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => EditProfilePage()),
+                  );
+                },
+                child: Text( _getFirstLetter(),style: text40018,),
+              ),
+            ),
+          ),
         ],
         title: const Text(
           'Medication history',

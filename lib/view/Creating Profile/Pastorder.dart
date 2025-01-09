@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:med_one/res/appurl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app_colors.dart';
 import '../../constants.dart';
+import '../bottomnavigation.dart';
 import 'Adding medcine one.dart';
 
 class MedicineListPastorder extends StatefulWidget {
@@ -26,7 +28,8 @@ class _MedicineListPastorderState extends State<MedicineListPastorder> {
   Future<void> fetchMedicineList() async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
     String? userId = preferences.getString('userID');
-    final String apiUrl = "http://13.232.117.141:3003/medone/getMedicineForSchedule";
+    // final String apiUrl = "http://13.232.117.141:3003/medone/getMedicineForSchedule";
+    final String apiUrl = AppUrl.getCompleteMedicine;
     final Map<String, dynamic> requestBody = {
       "userId": int.parse(userId.toString())
     };
@@ -42,6 +45,22 @@ class _MedicineListPastorderState extends State<MedicineListPastorder> {
         final Map<String, dynamic> responseBody = jsonDecode(response.body);
 
         if (responseBody['success'] == true && responseBody['data'] != null) {
+          // setState(() {
+          //   medicineList = (responseBody['data'] as List).map((item) {
+          //     // Extracting medicine details
+          //     final medicine = item['medicine'][0];
+          //     return {
+          //       "id": medicine['id'], // Medicine ID
+          //       "name": medicine['name'], // Medicine name
+          //       "date": "Date unavailable", // Placeholder for date
+          //       "image": "assets/pill.png", // Default image
+          //     };
+          //   }).toList();
+          //
+          //   // Populate selectedMedicines with IDs if needed (optional step)
+          //   selectedMedicines =
+          //       medicineList.map((medicine) => medicine['id'] as int).toList();
+          // });
           setState(() {
             medicineList = (responseBody['data'] as List).map((item) {
               // Extracting medicine details
@@ -49,7 +68,8 @@ class _MedicineListPastorderState extends State<MedicineListPastorder> {
               return {
                 "id": medicine['id'], // Medicine ID
                 "name": medicine['name'], // Medicine name
-                "date": "Date unavailable", // Placeholder for date
+                "date": item['startDate'], // Start date from the response
+                "no_of_days": item['no_of_days'], // Number of days from the response
                 "image": "assets/pill.png", // Default image
               };
             }).toList();
@@ -58,6 +78,7 @@ class _MedicineListPastorderState extends State<MedicineListPastorder> {
             selectedMedicines =
                 medicineList.map((medicine) => medicine['id'] as int).toList();
           });
+
         } else {
           print("Error: ${responseBody['message']}");
         }
@@ -78,7 +99,7 @@ class _MedicineListPastorderState extends State<MedicineListPastorder> {
     print('printing bf / send selected medi${selectedMedicines}');
     SharedPreferences preferences = await SharedPreferences.getInstance();
     String? userId = preferences.getString('userID');
-    final String apiUrl = "http://13.232.117.141:3003/medone/selectPastOrderMedicine";
+    final String apiUrl =AppUrl.selectPastOrderMedicine;
 
     // Ensure selectedMedicines contains IDs of selected medicines
     final Map<String, dynamic> requestBody = {
@@ -95,7 +116,11 @@ class _MedicineListPastorderState extends State<MedicineListPastorder> {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseBody = jsonDecode(response.body);
-
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => BottomNavigation()),
+              (Route<dynamic> route) => false, // This condition removes all previous routes
+        );
         if (responseBody['success'] == true) {
           print("Medicines successfully scheduled.");
           // Perform any additional actions here
@@ -156,7 +181,7 @@ class _MedicineListPastorderState extends State<MedicineListPastorder> {
             ),
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop();
+
                 sendSelectedMedicines();
                 print('Selected Medicines: $selectedMedicines');
               },
@@ -167,6 +192,72 @@ class _MedicineListPastorderState extends State<MedicineListPastorder> {
       },
     );
   }
+  Future<void> _showConfirmationDialogforSingleMedicine(BuildContext context, List<int> medicineId) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // Dialog can't be dismissed by tapping outside
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Are you sure?'),
+          content: const Text('Do you want to schedule this medicine?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                sendMedicine(medicineId);
+                print('Sent Medicine: $medicineId');
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> sendMedicine(List<int> medicineIds) async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    String? userId = preferences.getString('userID');
+    final String apiUrl = AppUrl.selectPastOrderMedicine;
+
+    // Ensure medicineIds contains the IDs of selected medicines
+    final Map<String, dynamic> requestBody = {
+      "userId": int.parse(userId.toString()),
+      "medicineIds": medicineIds, // Pass as list
+    };
+
+    try {
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(requestBody),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseBody = jsonDecode(response.body);
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => BottomNavigation()),
+              (Route<dynamic> route) => false, // Remove all previous routes
+        );
+        if (responseBody['success'] == true) {
+          print("Medicines successfully scheduled.");
+        } else {
+          print("Error: ${responseBody['message']}");
+        }
+      } else {
+        print("Failed to schedule medicines: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Error occurred while scheduling medicines: $e");
+    }
+  }
+
 
   @override
   @override
@@ -275,7 +366,11 @@ class _MedicineListPastorderState extends State<MedicineListPastorder> {
                           });
                         },
                       )
-                          : const Icon(Icons.confirmation_num_sharp),
+                          :  Image.asset(
+                        'assets/icons/multiSelect.png',
+                        height: 30,
+                        width: 30,
+                      ),
                       title: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -298,10 +393,13 @@ class _MedicineListPastorderState extends State<MedicineListPastorder> {
                               ),
                               ElevatedButton(
                                 onPressed: () {
-                                  // Add your schedule button logic here
+                                  _showConfirmationDialogforSingleMedicine(context, [medicine['id']]);
+
+
+                                  print(medicine['id']);
                                 },
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blue,
+                                  backgroundColor: AppColors.primaryColor,
                                   shape: const StadiumBorder(),
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 16, vertical: 8),

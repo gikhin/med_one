@@ -75,8 +75,8 @@ class _DailyRoutineState extends State<DailyRoutine> {
         
         _showFlushbar("Routine saved successfully!", Colors.green);
         print('Routine saved: ${response.body}');
-
-        _showMedicationOptionsDialog(context);
+        Navigator.push(context, MaterialPageRoute(builder: (context) => AddingMedicineone()));
+        // _showMedicationOptionsDialog(context);
       } else {
         _showFlushbar("Failed to save routine. Error: ${response.statusCode}", Colors.red);
       }
