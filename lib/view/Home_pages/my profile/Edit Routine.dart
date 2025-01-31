@@ -888,14 +888,16 @@
 
 
 
-import 'package:another_flushbar/flushbar.dart';
-import 'package:flutter/cupertino.dart';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
+import '../../../constants.dart';
+import '../../../res/appurl.dart';
+import '../../../widgets/CustomWidgets.dart';
+import '../../bottomnavigation.dart';
 
 class EditDailyRoutine extends StatefulWidget {
   const EditDailyRoutine({super.key});
@@ -905,28 +907,20 @@ class EditDailyRoutine extends StatefulWidget {
 }
 
 class _EditDailyRoutineState extends State<EditDailyRoutine> {
+  static var getRoutine = AppUrl.gettingRoutine;
+  static var editRoutine = AppUrl.editRoutine;
 
-  static var getRoutine = 'http://13.232.117.141:3003/medone/getUserRoutine';
-  static var editRoutine = 'http://13.232.117.141:3003/medone/editroutine';
-
-  List<dynamic> routineData = []; // To hold the routine data
   List<TimeOfDay> routineTimes = List.generate(6, (index) => TimeOfDay.now());
-  bool isLoading = true; // To handle loading state
+  bool isLoading = true;
 
-  List<TimeOfDay> selectedTimes = [
-    TimeOfDay(hour: 7, minute: 0),
-    TimeOfDay(hour: 8, minute: 0),
-    TimeOfDay(hour: 9, minute: 0),
-    TimeOfDay(hour: 13, minute: 0),
-    TimeOfDay(hour: 20, minute: 0),
-    TimeOfDay(hour: 22, minute: 0),
+  final List<String> routineImages = [
+    'assets/images/awaken.png',
+    'assets/images/exercising.png',
+    'assets/images/breakfast 1.png',
+    'assets/images/lunch-box.png',
+    'assets/images/roti 1.png',
+    'assets/images/sleep.png',
   ];
-  String _timeOfDayToString(TimeOfDay time) {
-    final hours = time.hour == 0 ? 12 : (time.hour > 12 ? time.hour - 12 : time.hour);
-    final minutes = time.minute.toString().padLeft(2, '0');
-    final amPm = time.hour >= 12 ? 'PM' : 'AM';
-    return '$hours:$minutes $amPm';
-  }
 
   @override
   void initState() {
@@ -934,43 +928,24 @@ class _EditDailyRoutineState extends State<EditDailyRoutine> {
     _fetchRoutine();
   }
 
-  Map<String, dynamic> _convertToRoutine(int userid) {
-    return {
-      'userId': int.parse(userid.toString()),
-      'routine': [
-        {
-          'wakeUp': _timeOfDayToString(selectedTimes[0]),
-          'exercise': _timeOfDayToString(selectedTimes[5]),
-          'breakfast': _timeOfDayToString(selectedTimes[1]),
-          'lunch': _timeOfDayToString(selectedTimes[2]),
-          'dinner': _timeOfDayToString(selectedTimes[3]),
-          'sleep': _timeOfDayToString(selectedTimes[4]),
-        },
-      ],
-    };
-  }
-
   Future<void> _fetchRoutine() async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    String? userID = preferences.getString('userID');
     final url = Uri.parse(getRoutine);
     try {
-      SharedPreferences preferences = await SharedPreferences.getInstance();
-      String? userID = preferences.getString('userID');
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'userId': int.parse(userID.toString())}),
       );
+
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
-        print('fetched...:${responseData}');
         setState(() {
-          routineData = responseData['data'];
-          _parseRoutineTimes();
           isLoading = false;
+          routineTimes = _parseRoutineTimes(responseData['data'][0]['routine'][0]);
         });
-
       } else {
-        // Handle error
         setState(() {
           isLoading = false;
         });
@@ -979,66 +954,19 @@ class _EditDailyRoutineState extends State<EditDailyRoutine> {
       setState(() {
         isLoading = false;
       });
-      _showFlushbar("Error fetching routine: $error", Colors.red);
     }
   }
 
-  Future<void> _sendeditRoutineToBackend() async {
-    SharedPreferences preferences = await SharedPreferences.getInstance();
-    String? userId = preferences.getString('userID');
-    final routineData = _convertToRoutine(int.parse(userId.toString()));
-    print('my rt data$routineData');
-    final url = Uri.parse(editRoutine);
-    try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(routineData),
-      );
-      if (response.statusCode == 200) {
-        _showFlushbar("Routine saved successfully!", Colors.green);
-        print('Routine saved: ${response.body}');
-        print('Routine datas: ${routineData}');
-
-        // Navigator.pushAndRemoveUntil(
-        //   context,
-        //   MaterialPageRoute(builder: (context) => BottomNavigation()),
-        //       (Route<dynamic> route) => false, // This condition removes all previous routes
-        // );
-      } else {
-        _showFlushbar("Failed to save routine. Error: ${response.statusCode}", Colors.red);
-      }
-    } catch (error) {
-      _showFlushbar("Error sending data: $error", Colors.red);
-    }
+  List<TimeOfDay> _parseRoutineTimes(Map<String, dynamic> routine) {
+    return [
+      _stringToTimeOfDay(routine['wakeUp']),
+      _stringToTimeOfDay(routine['exercise']),
+      _stringToTimeOfDay(routine['breakfast']),
+      _stringToTimeOfDay(routine['lunch']),
+      _stringToTimeOfDay(routine['dinner']),
+      _stringToTimeOfDay(routine['sleep']),
+    ];
   }
-
-  void _showMedicationOptionsDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        backgroundColor: Colors.blue,
-
-        content: medicationOptionsContainer(context),
-
-      ),
-    );
-  }
-
-  void _parseRoutineTimes() {
-    if (routineData.isNotEmpty) {
-      final routine = routineData[0]['routine'][0];
-      routineTimes = [
-        _stringToTimeOfDay(routine['wakeUp']),
-        _stringToTimeOfDay(routine['exercise']),
-        _stringToTimeOfDay(routine['breakfast']),
-        _stringToTimeOfDay(routine['lunch']),
-        _stringToTimeOfDay(routine['dinner']),
-        _stringToTimeOfDay(routine['sleep']),
-      ];
-    }
-  }
-
 
   TimeOfDay _stringToTimeOfDay(String timeString) {
     final parts = timeString.split(' ');
@@ -1046,7 +974,6 @@ class _EditDailyRoutineState extends State<EditDailyRoutine> {
     final hour = int.parse(timeParts[0]);
     final minute = int.parse(timeParts[1]);
 
-    // Adjust hour for AM/PM
     if (parts[1] == 'PM' && hour != 12) {
       return TimeOfDay(hour: hour + 12, minute: minute);
     } else if (parts[1] == 'AM' && hour == 12) {
@@ -1055,307 +982,166 @@ class _EditDailyRoutineState extends State<EditDailyRoutine> {
     return TimeOfDay(hour: hour, minute: minute);
   }
 
-  void _showFlushbar(String message, Color color) {
-    Flushbar(
-      message: message,
-      backgroundColor: color,
-      duration: Duration(seconds: 3),
-    )..show(context);
-  }
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Dronewidgetss.mainButton(
-          title: 'Edit Routine',
-          onPressed: () =>
-              showDialog(
-                context: context,
-                builder: (BuildContext context) => AlertDialog(
-                  title: Text('Are you sure?'),
-                  content: Text('Are you ready to save the data?'),
-                  actions: [
-                    TextButton(onPressed: () => Navigator.pop(context), child: Text('Cancel')),
-                    TextButton(
-                      onPressed: () {
+  Future<void> _saveRoutine() async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    String? userID = preferences.getString('userID');
+    final url = Uri.parse(editRoutine);
+    final routineData = {
+      'userId': int.parse(userID.toString()),
+      'routine': [
+        {
+          'wakeUp': routineTimes[0].format(context),
+          'exercise': routineTimes[1].format(context),
+          'breakfast': routineTimes[2].format(context),
+          'lunch': routineTimes[3].format(context),
+          'dinner': routineTimes[4].format(context),
+          'sleep': routineTimes[5].format(context),
+        },
+      ],
+    };
 
-
-                        _sendeditRoutineToBackend();
-                        // _showMedicationOptionsDialog(context);
-                      },
-                      child: Text('OK'),
-                    ),
-                  ],
-                ),
-              ),
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      appBar: AppBar(
-          actions: [
-            // ElevatedButton(onPressed: () {
-            //   Navigator.push(context, MaterialPageRoute(builder: (context) =>
-            //       AddingMedicineone(
-            //         // name: '',
-            //         // gender: '',
-            //         // dateOfBirth:'',
-            //         // healthCondition:'', // Pass the new field
-            //         // height: '', // Pass the new field
-            //         // weight: '', userId: 45, // Pass the new field
-            //       )));
-            //
-            // }, child: Text('Skip', style: text40018primary)),
-            SizedBox(width: 10),
-          ],
-          leading: Dronewidgetss.backButton(context)),
-      body: Padding(
-        padding: const EdgeInsets.all(10.0),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text.rich(
-                    TextSpan(
-                      children: [
-                        TextSpan(text: 'How does your '),
-                        TextSpan(text: 'day', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 24, color: Colors.blue)),
-                        TextSpan(text: ' look like?'),
-                      ],
-                    ),
-                  ),
-                  Stack(
-                    children: [
-                      SizedBox(height:540,child: Image.asset('assets/images/s.png',)),
-                      Positioned(left: 65, top: 45, child: _buildTimePickerContainer(0)),
-                      Positioned(top: 60,left: 10, child: _buildTooltip('Wake up', 'assets/images/exercising.png')),
-
-                      Positioned(right: 100, top: 115, child: _buildTimePickerContainer(1)),
-                      Positioned(top: 60,right: 50, child: _buildTooltip('Exercise', 'assets/images/breakfast 1.png')),
-
-                      Positioned(right: 110, top: 200, child: _buildTimePickerContainer(2)),
-                      Positioned(right: 50, top: 230, child: _buildTooltip('Breakfast', 'assets/images/lunch-box.png')),
-
-                      Positioned(left: 80, top: 290, child: _buildTimePickerContainer(3)),
-                      Positioned(top: 260, left: 10, child: _buildTooltip('Lunch', 'assets/images/lunch-box.png')),
-
-                      Positioned(left: 120, top: 390, child: _buildTimePickerContainer(4)),
-                      Positioned(left: 40, top: 400, child: _buildTooltip('Dinner', 'assets/images/lunch-box.png')),
-
-                      Positioned(top: 400, right: 20, child: _buildTooltip('Sleep', 'assets/images/lunch-box.png')),
-                      Positioned(right: 80, top: 460, child: _buildTimePickerContainer(5)),
-                    ],
-                  ),
-                  SizedBox(height: 30,)
-
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTimePickerContainer(int index) {
-    if (isLoading) {
-      return CircularProgressIndicator(); // Show a loading indicator
-    } else if (routineTimes.isNotEmpty) {
-      return GestureDetector(
-        onTap: () => _selectTime(index),
-        child: Container(
-          width: 100,
-          decoration: BoxDecoration(
-            color: Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(50),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Center(child: Text('${routineTimes[index].format(context)}')),
-          ),
-        ),
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(routineData),
+      );
+      if (response.statusCode == 200) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => BottomNavigation()),
+              (Route<dynamic> route) => false,
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to update routine.')),
+        );
+      }
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error saving routine: $error')),
       );
     }
-
-
-    return SizedBox.shrink(); // Return an empty box if no data
   }
 
   Future<void> _selectTime(int index) async {
-    final picked = await showTimePicker(context: context, initialTime: routineTimes[index]);
-    if (picked != null) setState(() => routineTimes[index] = picked);
-  }
-
-  Widget _buildTooltip(String message, String imagePath) {
-    return Tooltip(
-      message: message,
-      child: CircleAvatar(
-        radius: 35,
-        backgroundColor: Color.fromRGBO(125, 210, 255, 1),
-        child: Padding(
-          padding: const EdgeInsets.all(15.0),
-          child: Image.asset(imagePath),
-        ),
-      ),
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: routineTimes[index],
     );
+
+    if (picked != null) {
+      setState(() {
+        routineTimes[index] = picked;
+      });
+    }
   }
 
-  // Your medicationOptionsContainer function
-  static Widget medicationOptionsContainer(BuildContext context) {
-    return Container(
+  @override
+  Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
 
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            'Do you have any past orders or need to add it manually?',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.normal,
-              color: Colors.grey,
+    return Scaffold(
+      appBar: AppBar(
+        centerTitle: true,
+        title: Text('Edit Routine', style: text40014black),
+        leading: Dronewidgets.backButton(context),
+      ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            ...List.generate(
+              routineTimes.length,
+                  (index) => Stack(
+                children: [
+                  if (index != routineTimes.length - 1)
+                    Positioned(
+                      top: 48,
+                      left: screenSize.width * 0.1,
+                      child: Container(
+                        height: screenSize.height * 0.05,
+                        width: 2,
+                        color: Colors.blue,
+                      ),
+                    ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      CircleAvatar(
+                        backgroundColor: Colors.blue,
+                        radius: screenSize.width * 0.08,
+                        backgroundImage: AssetImage(routineImages[index]),
+                      ),
+                      SizedBox(width: screenSize.width * 0.05),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => _selectTime(index),
+                          child: Card(
+                            color: Colors.blue.shade50,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Padding(
+                              padding: EdgeInsets.all(screenSize.width * 0.03),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    ['Wake Up', 'Exercise', 'Breakfast', 'Lunch', 'Dinner', 'Sleep'][index],
+                                    style: TextStyle(
+                                      fontSize: screenSize.width * 0.05,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.blue,
+                                    ),
+                                  ),
+                                  SizedBox(height: screenSize.height * 0.005),
+                                  Text(
+                                    routineTimes[index].format(context),
+                                    style: TextStyle(
+                                      fontSize: screenSize.width * 0.045,
+                                      color: Colors.black54,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: 20),
-          // "Past order" button
-          Dronewidgetss.mainButton(title: 'Past order', onPressed: (){
-            Navigator.pop(context);
-
-          }
-          ),
-          SizedBox(height: 12),
-
-          // "Add Medication" button
-          Dronewidgetss.mainButton(title: 'Add Medication', onPressed: (){
-            // Navigator.push(context, MaterialPageRoute(builder: (context) => AddingMedicineone()));
-            // Navigator.pushAndRemoveUntil(
-            //   context,
-            //   MaterialPageRoute(builder: (context) => AddingMedicineone()),
-            //       (Route<dynamic> route) => false, // This removes all previous routes
-            // );
-
-          })
-
-        ],
-      ),
-    );
-  }
-}
-
-class Dronewidgetss {
-  // Main button widget with customizable onPressed functionality
-  static Widget mainButton({
-    required String title,
-    required VoidCallback onPressed,
-    Color? backgroundColor, // Optional parameter for button background color
-    Color? textColor, // Optional parameter for text color
-    FocusNode? fieldFocus,
-  }) {
-    return Container(
-      width: 350,
-      height: 55,
-      child: ElevatedButton(
-        onPressed: onPressed, // Use the passed onPressed function
-        style: ElevatedButton.styleFrom(
-          backgroundColor: backgroundColor ?? Colors.blue,
-          // Use passed background color or default
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(36), // Rounded corners
-          ),
-          textStyle: TextStyle(
-            fontSize: 18,
-            fontFamily: 'Poppins',
-            fontWeight: FontWeight.normal,
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(10.0),
-          child: Text(
-            title, // Use the passed title
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: textColor ??
-                  Colors.white, // Use passed text color or default to white
+            const SizedBox(height: 20),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Dronewidgets.mainButton(
+                title: 'Edit Routine',
+                onPressed: () => showDialog(
+                  context: context,
+                  builder: (BuildContext context) => AlertDialog(
+                    title: Text('Are you sure?'),
+                    content: Text('Are you ready to save the data?'),
+                    actions: [
+                      TextButton(
+                          onPressed: () => Navigator.pop(context), child: Text('Cancel')),
+                      TextButton(
+                        onPressed: () {
+                          _saveRoutine();
+                        },
+                        child: Text('OK'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
-          ),
+          ],
         ),
-      ),
-    );
-  }
-
-  // Back button widget
-  static Widget backButton(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: CircleAvatar(
-        radius: 20,
-        backgroundColor: Colors.blue,
-        child: IconButton(
-          padding: EdgeInsets.zero, // Remove the default padding
-          constraints: BoxConstraints(), // Remove any size constraints
-          onPressed: () {
-            Navigator.pop(context); // Navigate back
-          },
-          icon: Icon(
-            Icons.arrow_back_ios_rounded,
-            color: Colors.white,
-          ),
-        ),
-      ),
-    );
-  }
-
-
-// Custom text form field widget with a controller
-  static Widget customTextFormField({
-    String? hintText,
-    required TextEditingController controller, // Add controller parameter
-    FocusNode? fieldFocus,
-    bool obscureText = false, // Add obscureText parameter with a default value
-    Widget? suffixIcon, // Add suffixIcon parameter
-    String? Function(String?)? validator, // Add validator parameter
-    String? Function(String?)? onFieldSubmitted,
-  }) {
-    return Container(
-      width: 390,
-      height: 55,
-      child: TextFormField(
-        controller: controller,
-        // Use the passed controller
-        focusNode: fieldFocus,
-        obscureText: obscureText,
-        // Use the passed obscureText value
-        decoration: InputDecoration(
-          hintText: hintText ?? '',
-          // Set the placeholder text if provided
-          filled: true,
-          fillColor: Colors.green,
-          contentPadding: EdgeInsets.symmetric(vertical: 18, horizontal: 20),
-          // Padding inside the field
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(36), // Rounded corners
-            borderSide: BorderSide.none, // No border by default
-          ),
-          hintStyle: TextStyle(
-            fontSize: 18,
-            fontFamily: 'Poppins',
-            fontWeight: FontWeight.normal,
-            color: Colors.grey, // Hint text color
-          ),
-          suffixIcon: suffixIcon, // Add the suffixIcon if provided
-        ),
-        style: TextStyle(
-          fontSize: 18,
-          fontFamily: 'Poppins',
-          fontWeight: FontWeight.normal,
-          color: Colors.black, // Text color
-        ),
-        validator: validator,
-        // Use the validator if provided
-        onFieldSubmitted: onFieldSubmitted,
       ),
     );
   }

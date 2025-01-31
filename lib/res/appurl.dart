@@ -7,10 +7,12 @@ class AppUrl{
   // static const hostedip = 'test.apis.dr1.co.in';
 
   static const hostedip = '13.232.117.141';
+  // static const localip = '192.168.1.7';
 
 
   // static var baseUrl = 'http://${hostedip}:${port}';
   // static var baseUrl = 'https://${hostedip}/medone';
+  // static var baseUrl = 'http://${localip}:${port}/medone';
   static var baseUrl = 'http://${hostedip}:${port}/medone';
 
   static var login = '$baseUrl/userLogin';

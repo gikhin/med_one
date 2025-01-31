@@ -61,9 +61,30 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Chatbot")),
+      appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text("Chatbot"),
+        centerTitle: true,
+      ),
       body: Column(
         children: [
+          SizedBox(height: 10),
+          Center(
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.primaryColor2,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                "Today",
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ),
           Expanded(
             child: ListView.builder(
               itemCount: _messages.length,
@@ -90,6 +111,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                     ),
                   ),
                 ),
+                SizedBox(width: 8),
                 IconButton(
                   onPressed: () {
                     if (_controller.text.isNotEmpty) {
@@ -97,13 +119,14 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                       _controller.clear();
                     }
                   },
-                  icon: Icon(Icons.send),
+                  icon: Icon(Icons.send, color: AppColors.primaryColor2),
                 ),
               ],
             ),
           ),
         ],
       ),
+
     );
   }
 
@@ -117,7 +140,12 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         child: Container(
           decoration: BoxDecoration(
             color: isUser ? AppColors.primaryColor2 : Colors.grey[300],
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(16),
+              topRight: Radius.circular(16),
+              bottomLeft: isUser ? Radius.circular(16) : Radius.zero,
+              bottomRight: isUser ? Radius.zero : Radius.circular(16),
+            ),
           ),
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
           child: Text(

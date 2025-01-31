@@ -657,6 +657,7 @@
 
 import 'dart:convert';
 
+import 'package:another_flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart'; // Required for date formatting
@@ -693,9 +694,11 @@ class _AddingMedicineTwoState extends State<AddingMedicineTwo> {
   bool isNight = false;
   bool checkingOr = false;
   bool areButtonsEnabled = true; // To control whether the timing buttons are active
+  bool hideTiming = false;
   bool areTextFieldsEnabled = true; // To control whether the text fields are editabl
   DateTime? _selectedStartDate; // To store the selected date
-
+  bool isHoursFieldEnabled = true; // To enable/disable hours input
+  bool isDaysFieldEnabled = true; // To enable/disable days input
 
   TextEditingController totalQuantityController = TextEditingController();
   TextEditingController takingQuantityController = TextEditingController();
@@ -711,7 +714,6 @@ class _AddingMedicineTwoState extends State<AddingMedicineTwo> {
   FocusNode timeIntervalNode = FocusNode();
   FocusNode dateIntervalNode = FocusNode();
   String userName = '';
-
 
 
   final String apiUrl = AppUrl.addMedcineSchedule; // Replace with your actual API URL
@@ -916,70 +918,74 @@ class _AddingMedicineTwoState extends State<AddingMedicineTwo> {
               ),
               const SizedBox(height: 20),
 
-              const Text(
-                'Timing',
-                style: TextStyle(fontSize: 16),
-              ),
-              const SizedBox(height: 11),
-              // Row(
-              //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              //   children: [
-              //     _buildTimingButton('Morning', isMorning, () {
-              //       if (areButtonsEnabled) {
-              //         setState(() {
-              //           isMorning = !isMorning;
-              //           _toggleTiming('Morning', isMorning);
-              //           areTextFieldsEnabled = false; // Disable text fields when button is clicked
-              //         });
-              //       }
-              //     }),
-              //     _buildTimingButton('Afternoon', isAfternoon, () {
-              //       if (areButtonsEnabled) {
-              //         setState(() {
-              //           isAfternoon = !isAfternoon;
-              //           _toggleTiming('Afternoon', isAfternoon);
-              //           areTextFieldsEnabled = false; // Disable text fields when button is clicked
-              //         });
-              //       }
-              //     }),
-              //     _buildTimingButton('Night', isNight, () {
-              //       if (areButtonsEnabled) {
-              //         setState(() {
-              //           isNight = !isNight;
-              //           _toggleTiming('Night', isNight);
-              //           areTextFieldsEnabled = false; // Disable text fields when button is clicked
-              //         });
-              //       }
-              //     }),
-              //   ],
-              // ),
+!hideTiming?Column(crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+    const Text(
+      'Timing',
+      style: TextStyle(fontSize: 16),
+    ),
+    const SizedBox(height: 11),
+    // Row(
+    //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    //   children: [
+    //     _buildTimingButton('Morning', isMorning, () {
+    //       if (areButtonsEnabled) {
+    //         setState(() {
+    //           isMorning = !isMorning;
+    //           _toggleTiming('Morning', isMorning);
+    //           areTextFieldsEnabled = false; // Disable text fields when button is clicked
+    //         });
+    //       }
+    //     }),
+    //     _buildTimingButton('Afternoon', isAfternoon, () {
+    //       if (areButtonsEnabled) {
+    //         setState(() {
+    //           isAfternoon = !isAfternoon;
+    //           _toggleTiming('Afternoon', isAfternoon);
+    //           areTextFieldsEnabled = false; // Disable text fields when button is clicked
+    //         });
+    //       }
+    //     }),
+    //     _buildTimingButton('Night', isNight, () {
+    //       if (areButtonsEnabled) {
+    //         setState(() {
+    //           isNight = !isNight;
+    //           _toggleTiming('Night', isNight);
+    //           areTextFieldsEnabled = false; // Disable text fields when button is clicked
+    //         });
+    //       }
+    //     }),
+    //   ],
+    // ),
 
 
 
-              ///ss
-                              Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildTimingButton('Morning', isMorning, () {
-                      setState(() {
-                        isMorning = !isMorning;
-                        _toggleTiming('Morning', isMorning);
-                      });
-                    }),
-                    _buildTimingButton('Afternoon', isAfternoon, () {
-                      setState(() {
-                        isAfternoon = !isAfternoon;
-                        _toggleTiming('lunch', isAfternoon);
-                      });
-                    }),
-                    _buildTimingButton('Night', isNight, () {
-                      setState(() {
-                        isNight = !isNight;
-                        _toggleTiming('dinner', isNight);
-                      });
-                    }),
-                  ],
-                ),
+    ///ss
+    Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        _buildTimingButton('Morning', isMorning, () {
+          setState(() {
+            isMorning = !isMorning;
+            _toggleTiming('Morning', isMorning);
+          });
+        }),
+        _buildTimingButton('Afternoon', isAfternoon, () {
+          setState(() {
+            isAfternoon = !isAfternoon;
+            _toggleTiming('lunch', isAfternoon);
+          });
+        }),
+        _buildTimingButton('Night', isNight, () {
+          setState(() {
+            isNight = !isNight;
+            _toggleTiming('dinner', isNight);
+          });
+        }),
+      ],
+    ),
+  ],
+):Text(''),
 
 
 
@@ -1015,7 +1021,7 @@ class _AddingMedicineTwoState extends State<AddingMedicineTwo> {
                 onTap: () {
                   if (areTextFieldsEnabled) {
                     setState(() {
-                      areButtonsEnabled = false; // Disable buttons when the text fields are active
+                      // areButtonsEnabled = false; // Disable buttons when the text fields are active
                     });
                   }
                 },
@@ -1029,10 +1035,13 @@ class _AddingMedicineTwoState extends State<AddingMedicineTwo> {
                         controller: timeIntervalController,
                         keyboardType: TextInputType.number,
                         decoration: const InputDecoration(hintText: 'Enter hours'),
-                        readOnly: !areTextFieldsEnabled, // Disable input when not active
+                        readOnly: !areTextFieldsEnabled || !isHoursFieldEnabled, // Disable input when not active or disabled
                         onChanged: (value) {
                           setState(() {
-                            areButtonsEnabled = value.isEmpty; // Disable buttons if text is entered
+                            areButtonsEnabled = false; // Disable buttons if text is entered
+                            isDaysFieldEnabled = value.isEmpty; // Disable days field if hours field is active
+                            // showFlushbar(context, 'Please select either hours or days, not both', Colors.red);
+
                           });
                         },
                       ),
@@ -1047,6 +1056,7 @@ class _AddingMedicineTwoState extends State<AddingMedicineTwo> {
                   if (areTextFieldsEnabled) {
                     setState(() {
                       areButtonsEnabled = false; // Disable buttons when the text fields are active
+                      // showFlushbar(context, 'Please select either hours or days, not both', Colors.red);
                     });
                   }
                 },
@@ -1060,10 +1070,12 @@ class _AddingMedicineTwoState extends State<AddingMedicineTwo> {
                         controller: dateIntervalController,
                         keyboardType: TextInputType.number,
                         decoration: const InputDecoration(hintText: 'Enter days'),
-                        readOnly: !areTextFieldsEnabled, // Disable input when not active
+                        readOnly: !areTextFieldsEnabled || !isDaysFieldEnabled, // Disable input when not active or disabled
                         onChanged: (value) {
                           setState(() {
-                            areButtonsEnabled = value.isEmpty; // Disable buttons if text is entered
+                            // areButtonsEnabled = value.isEmpty; // Disable buttons if text is entered
+                            hideTiming = !hideTiming;
+                            isHoursFieldEnabled = value.isEmpty; // Disable hours field if days field is active
                           });
                         },
                       ),
@@ -1073,6 +1085,75 @@ class _AddingMedicineTwoState extends State<AddingMedicineTwo> {
                   ],
                 ),
               ),
+              hideTiming?Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Timing',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 11),
+                  // Row(
+                  //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  //   children: [
+                  //     _buildTimingButton('Morning', isMorning, () {
+                  //       if (areButtonsEnabled) {
+                  //         setState(() {
+                  //           isMorning = !isMorning;
+                  //           _toggleTiming('Morning', isMorning);
+                  //           areTextFieldsEnabled = false; // Disable text fields when button is clicked
+                  //         });
+                  //       }
+                  //     }),
+                  //     _buildTimingButton('Afternoon', isAfternoon, () {
+                  //       if (areButtonsEnabled) {
+                  //         setState(() {
+                  //           isAfternoon = !isAfternoon;
+                  //           _toggleTiming('Afternoon', isAfternoon);
+                  //           areTextFieldsEnabled = false; // Disable text fields when button is clicked
+                  //         });
+                  //       }
+                  //     }),
+                  //     _buildTimingButton('Night', isNight, () {
+                  //       if (areButtonsEnabled) {
+                  //         setState(() {
+                  //           isNight = !isNight;
+                  //           _toggleTiming('Night', isNight);
+                  //           areTextFieldsEnabled = false; // Disable text fields when button is clicked
+                  //         });
+                  //       }
+                  //     }),
+                  //   ],
+                  // ),
+
+
+
+                  ///ss
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildTimingButton('Morning', isMorning, () {
+                        setState(() {
+                          isMorning = !isMorning;
+                          _toggleTiming('Morning', isMorning);
+                        });
+                      }),
+                      _buildTimingButton('Afternoon', isAfternoon, () {
+                        setState(() {
+                          isAfternoon = !isAfternoon;
+                          _toggleTiming('lunch', isAfternoon);
+                        });
+                      }),
+                      _buildTimingButton('Night', isNight, () {
+                        setState(() {
+                          isNight = !isNight;
+                          _toggleTiming('dinner', isNight);
+                        });
+                      }),
+                    ],
+                  ),
+                ],
+              ):Text(''),
               SizedBox(height: 30),
               Center(
                 child: Dronewidgets.mainButton(
@@ -1098,6 +1179,8 @@ class _AddingMedicineTwoState extends State<AddingMedicineTwo> {
                       "totalQuantity": totalQuantityController.text,
                       "timing": selectedTimings,
                       "takingQuantity": takingQuantityController.text,
+                      "timeInterval":timeIntervalController.text,
+                      "daysInterval":dateIntervalController.text
                     };
                     addMedicineData(data);
                     print('hl.. ${data}');
@@ -1261,5 +1344,15 @@ class _AddingMedicineTwoState extends State<AddingMedicineTwo> {
         ),
       ],
     );
+  }
+  void showFlushbar(BuildContext context, String message, Color backgroundColor) {
+    Flushbar(
+      message: message,
+      duration: Duration(seconds: 3),
+      backgroundColor: backgroundColor,
+      flushbarPosition: FlushbarPosition.TOP,
+      borderRadius: BorderRadius.circular(8),
+      margin: EdgeInsets.all(8),
+    )..show(context);
   }
 }

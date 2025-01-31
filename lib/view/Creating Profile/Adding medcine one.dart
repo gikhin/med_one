@@ -366,7 +366,8 @@ class _AddingMedicineoneState extends State<AddingMedicineone> {
                   );
                 } else {
                   // Show Flushbar if any field is empty
-                  showFlushbar(context, 'Please select a medicine type and enter the medicine name', Colors.red);
+                  showFlushbar(context, 'Choose a medicine type and name', Colors.red);
+                  // showFlushbar(context, 'Please select a medicine type and enter the medicine name', Colors.red);
                 }
               },
             ),

@@ -331,7 +331,7 @@ class _HomescreenState extends State<Homescreen> with SingleTickerProviderStateM
           return [];
         }
       } else {
-        showFlushbar(context, 'Failed to fetch data', Colors.red);
+        showFlushbar(context, 'No notifications for medicines', Colors.red);
         return [];
       }
     } catch (e) {
@@ -532,31 +532,27 @@ class _HomescreenState extends State<Homescreen> with SingleTickerProviderStateM
                       height: MediaQuery.of(context).size.height - 10,
                       child: Stack(
                         children: List.generate(medicines.length, (index) {
-                          // final medicine = medicines[index];
                           final reversedIndex = medicines.length - 1 - index; // Reverse the index
                           final medicine = medicines[reversedIndex];
 
-
                           return Positioned(
-                          top: (medicines.length - 1 - index) * 20.0,
-                          // bottom: (medicines.length - 1 - index) * 20.0,
-                          left: 0,
-                          right: 0,
-                          child: buildDismissibleCard(
-                          index: index,
-                          totalCards: medicines.length,
-                          color: medicine['color'],
-                          medicineName: medicine['name'].toString(),
-                          instruction: medicine['instruction'],
-                          pillcount: medicine['pillCount'],
-                          // pillcount: medicine['medicine_timetableID'].toString(),
-                          timetableId: medicine['medicine_timetableID'],
-                          image: medicine['image'],
-                          ),
+                            top: (medicines.length - 1 - index) * 20.0,
+                            left: 0,
+                            right: 0,
+                            child: buildDismissibleCard(
+                              index: index,
+                              color: medicine['color'],
+                              medicineName: medicine['name'].toString(),
+                              instruction: medicine['instruction'],
+                              pillcount: medicine['pillCount'],
+                              timetableId: medicine['medicine_timetableID'],
+                              image: medicine['image'],
+                            ),
                           );
                         }),
                       ),
                     );
+
                   }
                 },
               ),
@@ -574,53 +570,83 @@ class _HomescreenState extends State<Homescreen> with SingleTickerProviderStateM
     required String instruction,
     required String pillcount,
     required int timetableId,
-    required int index, // Add index parameter
-    required int totalCards, // Add totalCards parameter to compare
+    required int index,
     required String image,
   }) {
-    // Check if the card is the topmost card
-    if (index == totalCards - 1) {
-      return Dismissible(
-        key: UniqueKey(),
-        background: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Container(
-            color: Colors.green,
-            alignment: Alignment.centerLeft,
-            padding: EdgeInsets.only(left: 20),
-            child: Text(
-              'Taken',
-              style: TextStyle(color: Colors.white, fontSize: 18),
-            ),
+    return Dismissible(
+      key: UniqueKey(),
+      background: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Container(
+          color: Colors.green,
+          alignment: Alignment.centerLeft,
+          padding: EdgeInsets.only(left: 20),
+          child: Text(
+            'Taken',
+            style: TextStyle(color: Colors.white, fontSize: 18),
           ),
         ),
-        secondaryBackground: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Container(
-            color: Colors.red,
-            alignment: Alignment.centerRight,
-            padding: EdgeInsets.only(right: 20),
-            child: Text(
-              'Skipped',
-              style: TextStyle(color: Colors.white, fontSize: 18),
-            ),
+      ),
+      secondaryBackground: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Container(
+          color: Colors.red,
+          alignment: Alignment.centerRight,
+          padding: EdgeInsets.only(right: 20),
+          child: Text(
+            'Skipped',
+            style: TextStyle(color: Colors.white, fontSize: 18),
           ),
         ),
-        onDismissed: (direction) {
-          String status = direction == DismissDirection.startToEnd ? 'Taken' : 'Skipped';
-          String takenTime = DateFormat.jm().format(DateTime.now()); // Current time in "HH:mm a" format
-          String takenStatus = direction == DismissDirection.startToEnd ? 'Yes' : 'No';
-          // changeStatus(timetableId, status, takenTime
-          changeStatus(timetableId, status,takenStatus
-          ); // Call changeStatus with the timetableId
-        },
-        child: buildCardContent(color, medicineName, instruction, pillcount,image),
-      );
-    } else {
-      // For all other cards, return a static container (not swipable)
-      return buildCardContent(color, medicineName, instruction, pillcount,image);
-    }
+      ),
+      // onDismissed: (direction) {
+      //   String status = direction == DismissDirection.startToEnd ? 'Taken' : 'Skipped';
+      //   String takenTime = DateFormat.jm().format(DateTime.now()); // Current time in "HH:mm a" format
+      //   String takenStatus = direction == DismissDirection.startToEnd ? 'Yes' : 'No';
+      //   changeStatus(timetableId, status, takenStatus); // Call changeStatus with the timetableId
+      // },
+      onDismissed: (direction) {
+        String status = direction == DismissDirection.startToEnd ? 'Taken' : 'Skipped';
+        String takenTime = DateFormat.jm().format(DateTime.now()); // Current time in "HH:mm a" format
+        String takenStatus = direction == DismissDirection.startToEnd ? 'Yes' : 'No';
+
+        if (direction == DismissDirection.startToEnd) {
+          // Directly change status for 'Taken'
+          changeStatus(timetableId, status, takenStatus);
+        } else if (direction == DismissDirection.endToStart) {
+          // Show confirmation dialog for 'Skipped'
+          showDialog(
+            context: context,
+            builder: (BuildContext context) => AlertDialog(
+              title: Text('Are you sure?'),
+              content: Text('Swipe to skip? No notifications will appear.'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      Navigator.pop(context);
+
+                    });
+                  }, // Close the dialog without any action
+                  child: Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context); // Close the dialog
+                    changeStatus(timetableId, status, takenStatus); // Save the 'Skipped' status
+                  },
+                  child: Text('OK'),
+                ),
+              ],
+            ),
+          );
+        }
+      },
+
+      child: buildCardContent(color, medicineName, instruction, pillcount, image),
+    );
   }
+
 
 
 // Helper function to create card content
@@ -694,45 +720,45 @@ class _HomescreenState extends State<Homescreen> with SingleTickerProviderStateM
                   icon: Icon(Icons.info_outline, color: AppColors.whiteColor),
                 ),
               ),
-                Positioned(
-                    right: 10, // Adjust the position
-                    child:
-                    PopupMenuButton<String>(
-                      onSelected: (value) async {
-                        if (value == 'edit') {
-
-
-                        } else if (value == 'delete') {
-
-
-                        }
-                      },
-                      icon: const Icon(Icons.more_vert_rounded, color: Colors.white),
-                      itemBuilder: (context) => [
-                        PopupMenuItem(
-                          value: 'edit',
-                          child: Row(
-                            children: const [
-                              SizedBox(width: 8),
-                              Text('Edit'),
-                            ],
-                          ),
-                        ),
-                        PopupMenuItem(
-                          value: 'delete',
-                          child: Row(
-                            children: const [
-
-                              SizedBox(width: 8),
-                              Text('Delete'),
-                            ],
-                          ),
-                        ),
-                      ],
-                    )
-
-
-                ),
+                // Positioned(
+                //     right: 10, // Adjust the position
+                //     child:
+                //     PopupMenuButton<String>(
+                //       onSelected: (value) async {
+                //         if (value == 'edit') {
+                //
+                //
+                //         } else if (value == 'delete') {
+                //
+                //
+                //         }
+                //       },
+                //       icon: const Icon(Icons.more_vert_rounded, color: Colors.white),
+                //       itemBuilder: (context) => [
+                //         PopupMenuItem(
+                //           value: 'edit',
+                //           child: Row(
+                //             children: const [
+                //               SizedBox(width: 8),
+                //               Text('Edit'),
+                //             ],
+                //           ),
+                //         ),
+                //         PopupMenuItem(
+                //           value: 'delete',
+                //           child: Row(
+                //             children: const [
+                //
+                //               SizedBox(width: 8),
+                //               Text('Delete'),
+                //             ],
+                //           ),
+                //         ),
+                //       ],
+                //     )
+                //
+                //
+                // ),
               ],
             ),
 
